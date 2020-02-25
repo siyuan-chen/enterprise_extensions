@@ -506,7 +506,8 @@ class JumpProposal(object):
             return q, float(lqxy)
 
         name_string = '_'.join(name_list)
-        draw.__name__ = 'draw_from_{}_prior'.format(name_string)
+        draw.__name__ = 'draw_from_{}_prior'.format(name_string[:40])
+        draw.name_list = par_list
         return draw
 
     def draw_from_par_log_uniform(self, par_dict):
@@ -542,7 +543,8 @@ class JumpProposal(object):
             return q, 0
 
         name_string = '_'.join(name_list)
-        draw.__name__ = 'draw_from_{}_log_uniform'.format(name_string)
+        draw.__name__ = 'draw_from_{}_log_uniform'.format(name_string[:40])
+        draw.name_list = par_list
         return draw
 
     def draw_from_signal(self, signal_names):
@@ -589,7 +591,8 @@ class JumpProposal(object):
             return q, float(lqxy)
 
         name_string = '_'.join(name_list)
-        draw.__name__ = 'draw_from_{}_signal'.format(name_string)
+        draw.__name__ = 'draw_from_{}_signal'.format(name_string[:40])
+        draw.name_list = signal_list
         return draw
 
     def fe_jump(self, x, iter, beta):
