@@ -58,10 +58,10 @@ def white_noise_block(vary=False, inc_ecorr=False, gp_ecorr=False,
         if efac1:
             efac = parameter.Normal(1.0, 0.1)
         else:
-            efac = parameter.Uniform(0.01, 10.0)
-        equad = parameter.Uniform(-8.5, -5)
+            efac = parameter.Uniform(0.1, 5.0)
+        equad = parameter.Uniform(-9, -5)
         if inc_ecorr:
-            ecorr = parameter.Uniform(-8.5, -5)
+            ecorr = parameter.Uniform(-9, -5)
     else:
         efac = parameter.Constant()
         equad = parameter.Constant()
@@ -97,9 +97,9 @@ def white_noise_block(vary=False, inc_ecorr=False, gp_ecorr=False,
 
 
 def red_noise_block(psd='powerlaw', prior='log-uniform', Tspan=None,
-                    components=30, gamma_val=None, coefficients=False,
-                    select=None, modes=None, wgts=None,
-                    break_flat=False, break_flat_fq=None):
+                    components=30, gamma_val=None, delta_val=None,
+                    coefficients=False, select=None, modes=None,
+                    wgts=None, break_flat=False, break_flat_fq=None):
     """
     Returns red noise model:
         1. Red noise modeled as a power-law with 30 sampling frequencies
@@ -119,18 +119,17 @@ def red_noise_block(psd='powerlaw', prior='log-uniform', Tspan=None,
     :param coefficients: include latent coefficients in GP model?
     """
     # red noise parameters that are common
-    if psd in ['powerlaw', 'powerlaw_genmodes', 'turnover', 'flat_powerlaw',
-               'tprocess', 'tprocess_adapt', 'infinitepower']:
+    if psd in ['powerlaw', 'powerlaw_genmodes', 'turnover', 'broken_powerlaw',
+               'flat_powerlaw', 'tprocess', 'tprocess_adapt', 'infinitepower']:
         # parameters shared by PSD functions
         if prior == 'uniform':
-            log10_A = parameter.LinearExp(-20, -11)
-        elif prior == 'log-uniform' and gamma_val is not None:
-            if np.abs(gamma_val - 4.33) < 0.1:
-                log10_A = parameter.Uniform(-20, -11)
-            else:
-                log10_A = parameter.Uniform(-20, -11)
+            log10_A = parameter.LinearExp(-18, -10)
+        elif prior == 'log-uniform':
+            log10_A = parameter.Uniform(-18, -10)
+        elif prior == 'log-uniform-nanograv':
+            log10_A = parameter.Uniform(-18, -14)
         else:
-            log10_A = parameter.Uniform(-20, -11)
+            log10_A = parameter.Uniform(-18, -10)
 
         if gamma_val is not None:
             gamma = parameter.Constant(gamma_val)
@@ -140,6 +139,16 @@ def red_noise_block(psd='powerlaw', prior='log-uniform', Tspan=None,
         # different PSD function parameters
         if psd == 'powerlaw':
             pl = utils.powerlaw(log10_A=log10_A, gamma=gamma)
+        elif psd == 'broken_powerlaw':
+            kappa = parameter.Uniform(0.01, 0.5)
+            log10_fb = parameter.Uniform(-10, -7)
+
+            if delta_val is not None:
+                delta = parameter.Constant(delta_val)
+            else:
+                delta = parameter.Uniform(0, 7)
+            pl = gpp.broken_powerlaw(log10_A=log10_A, gamma=gamma, delta=delta,
+                                    log10_fb=log10_fb, kappa=kappa)
         elif psd == 'powerlaw_genmodes':
             pl = gpp.powerlaw_genmodes(log10_A=log10_A, gamma=gamma, wgts=wgts)
         elif psd == 'turnover':
@@ -177,12 +186,18 @@ def red_noise_block(psd='powerlaw', prior='log-uniform', Tspan=None,
     elif select == 'band' or select == 'band+':
         # define selection by observing band
         selection = selections.Selection(selections.by_band)
+    elif isinstance(select, list):
+        # define selection by list of custom backend
+        selection = selections.Selection(selections.custom_backends(select))
+    elif isinstance(select, dict):
+        # define selection by dict of custom backend
+        selection = selections.Selection(selections.custom_backends_dict(select))
     else:
         # define no selection
         selection = selections.Selection(selections.no_selection)
 
     if break_flat:
-        log10_A_flat = parameter.Uniform(-20, -11)
+        log10_A_flat = parameter.Uniform(-18, -10)
         gamma_flat = parameter.Constant(0)
         pl_flat = utils.powerlaw(log10_A=log10_A_flat, gamma=gamma_flat)
 
@@ -217,8 +232,8 @@ def red_noise_block(psd='powerlaw', prior='log-uniform', Tspan=None,
 
 
 def dm_noise_block(gp_kernel='diag', psd='powerlaw', nondiag_kernel='periodic',
-                   prior='log-uniform', Tspan=None, components=30,
-                   gamma_val=None, coefficients=False):
+                   prior='log-uniform', Tspan=None, components=30, select=None,
+                   gamma_val=None, delta_val=None, coefficients=False, tndm=False):
     """
     Returns DM noise model:
 
@@ -240,18 +255,17 @@ def dm_noise_block(gp_kernel='diag', psd='powerlaw', nondiag_kernel='periodic',
     """
     # dm noise parameters that are common
     if gp_kernel == 'diag':
-        if psd in ['powerlaw', 'turnover', 'flat_powerlaw',
-                   'tprocess', 'tprocess_adapt']:
+        if psd in ['powerlaw', 'turnover', 'broken_powerlaw',
+                   'flat_powerlaw', 'tprocess', 'tprocess_adapt']:
             # parameters shared by PSD functions
             if prior == 'uniform':
-                log10_A_dm = parameter.LinearExp(-20, -11)
-            elif prior == 'log-uniform' and gamma_val is not None:
-                if np.abs(gamma_val - 4.33) < 0.1:
-                    log10_A_dm = parameter.Uniform(-20, -11)
-                else:
-                    log10_A_dm = parameter.Uniform(-20, -11)
+                log10_A_dm = parameter.LinearExp(-18, -10)
+            elif prior == 'log-uniform':
+                log10_A_dm = parameter.Uniform(-18, -10)
+            elif prior == 'log-uniform-nanograv':
+                log10_A_dm = parameter.Uniform(-18, -14)
             else:
-                log10_A_dm = parameter.Uniform(-20, -11)
+                log10_A_dm = parameter.Uniform(-18, -10)
 
             if gamma_val is not None:
                 gamma_dm = parameter.Constant(gamma_val)
@@ -261,6 +275,17 @@ def dm_noise_block(gp_kernel='diag', psd='powerlaw', nondiag_kernel='periodic',
             # different PSD function parameters
             if psd == 'powerlaw':
                 dm_prior = utils.powerlaw(log10_A=log10_A_dm, gamma=gamma_dm)
+            elif psd == 'broken_powerlaw':
+                kappa_dm = parameter.Uniform(0.01, 0.5)
+                log10_fb_dm = parameter.Uniform(-10, -7)
+
+                if delta_val is not None:
+                    delta_dm = parameter.Constant(delta_val)
+                else:
+                    delta_dm = parameter.Uniform(0, 7)
+                dm_prior = gpp.broken_powerlaw(log10_A=log10_A_dm, gamma=gamma_dm,
+                                              delta=delta_dm,
+                                              log10_fb=log10_fb_dm, kappa=kappa_dm)
             elif psd == 'turnover':
                 kappa_dm = parameter.Uniform(0, 7)
                 lf0_dm = parameter.Uniform(-9, -7)
@@ -292,8 +317,12 @@ def dm_noise_block(gp_kernel='diag', psd='powerlaw', nondiag_kernel='periodic',
 
             dm_prior = gpp.free_spectrum(log10_rho=log10_rho_dm)
 
-        dm_basis = utils.createfourierdesignmatrix_dm(nmodes=components,
-                                                      Tspan=Tspan)
+        if tndm:
+            dm_basis = utils.createfourierdesignmatrix_dm_tn(nmodes=components,
+                                                             Tspan=Tspan)
+        else:
+            dm_basis = utils.createfourierdesignmatrix_dm(nmodes=components,
+                                                          Tspan=Tspan)
 
     elif gp_kernel == 'nondiag':
         if nondiag_kernel == 'periodic':
@@ -352,17 +381,23 @@ def dm_noise_block(gp_kernel='diag', psd='powerlaw', nondiag_kernel='periodic',
             dm_basis = gpk.linear_interp_basis_dm(dt=30*86400)
             dm_prior = gpk.dmx_ridge_prior(log10_sigma=log10_sigma)
 
-    dmgp = gp_signals.BasisGP(dm_prior, dm_basis, name='dm_gp',
-                              coefficients=coefficients)
+    if select is None:
+        dmgp = gp_signals.BasisGP(dm_prior, dm_basis, name='dm_gp',
+                                  coefficients=coefficients)
+    else:
+        dmgp = gp_signals.BasisGP(dm_prior, dm_basis, name='dm_gp',
+                                  coefficients=coefficients,
+                                  selection=select)
 
     return dmgp
 
 
 def chromatic_noise_block(gp_kernel='nondiag', psd='powerlaw',
                           nondiag_kernel='periodic',
-                          prior='log-uniform',
-                          idx=4, include_quadratic=False,
-                          Tspan=None, name='chrom', components=30,
+                          prior='log-uniform', name='chrom',
+                          include_quadratic=False, Tspan=None,
+                          idx=4, components=30, select=None,
+                          gamma_val=None, delta_val=None,
                           coefficients=False):
     """
     Returns GP chromatic noise model :
@@ -394,19 +429,39 @@ def chromatic_noise_block(gp_kernel='nondiag', psd='powerlaw',
         Whether to keep coefficients of the GP.
 
     """
+    if idx is None:
+        idx = parameter.Uniform(0, 7)
     if gp_kernel=='diag':
         chm_basis = gpb.createfourierdesignmatrix_chromatic(nmodes=components,
-                                                            Tspan=Tspan)
-        if psd in ['powerlaw', 'turnover', 'flat_powerlaw']:
+                                                            Tspan=Tspan,idx=idx)
+        if psd in ['powerlaw', 'turnover', 'broken_powerlaw', 'flat_powerlaw']:
             if prior == 'uniform':
-                log10_A = parameter.LinearExp(-18, -11)
+                log10_A = parameter.LinearExp(-18, -10)
             elif prior == 'log-uniform':
-                log10_A = parameter.Uniform(-18, -11)
-            gamma = parameter.Uniform(0, 7)
+                log10_A = parameter.Uniform(-18, -10)
+            elif prior == 'log-uniform-nanograv':
+                log10_A = parameter.Uniform(-18, -14)
+            else:
+                log10_A = parameter.Uniform(-18, -10)
+            if gamma_val is not None:
+                gamma = parameter.Constant(gamma_val)
+            else:
+                gamma = parameter.Uniform(0, 7)
 
             # PSD
             if psd == 'powerlaw':
                 chm_prior = utils.powerlaw(log10_A=log10_A, gamma=gamma)
+            elif psd == 'broken_powerlaw':
+                kappa = parameter.Uniform(0.01, 0.5)
+                log10_fb = parameter.Uniform(-10, -7)
+
+                if delta_val is not None:
+                    delta = parameter.Constant(delta_val)
+                else:
+                    delta = parameter.Uniform(0, 7)
+                chm_prior = gpp.broken_powerlaw(log10_A=log10_A, gamma=gamma,
+                                               delta=delta,
+                                               log10_fb=log10_fb, kappa=kappa)
             elif psd == 'turnover':
                 kappa = parameter.Uniform(0, 7)
                 lf0 = parameter.Uniform(-9, -7)
@@ -478,8 +533,13 @@ def chromatic_noise_block(gp_kernel='nondiag', psd='powerlaw',
                                      log10_alpha_wgt=log10_alpha_wgt,
                                      log10_ell2=log10_ell2)
 
-    cgp = gp_signals.BasisGP(chm_prior, chm_basis, name=name+'_gp',
-                              coefficients=coefficients)
+    if select is None:
+        cgp = gp_signals.BasisGP(chm_prior, chm_basis, name=name+'_gp',
+                                 coefficients=coefficients)
+    else:
+        cgp = gp_signals.BasisGP(chm_prior, chm_basis, name=name+'_gp',
+                                 coefficients=coefficients,
+                                 selection=select)
 
     if include_quadratic:
         # quadratic piece
@@ -493,7 +553,8 @@ def chromatic_noise_block(gp_kernel='nondiag', psd='powerlaw',
 
 def common_red_noise_block(psd='powerlaw', prior='log-uniform',
                            Tspan=None, components=30, gamma_val=None,
-                           orf=None, name='gw', coefficients=False,
+                           delta_val=None, orf=None, name='gw',
+                           coefficients=False, select=None,
                            pshift=False, pseed=None):
     """
     Returns common red noise model:
@@ -504,16 +565,19 @@ def common_red_noise_block(psd='powerlaw', prior='log-uniform',
 
     :param psd:
         PSD to use for common red noise signal. Available options
-        are ['powerlaw', 'turnover' 'spectrum']
+        are ['powerlaw', 'turnover' 'spectrum', 'broken_powerlaw']
     :param prior:
         Prior on log10_A. Default if "log-uniform". Use "uniform" for
         upper limits.
     :param Tspan:
         Sets frequency sampling f_i = i / Tspan. Default will
-        use overall time span for indivicual pulsar.
+        use overall time span for individual pulsar.
     :param gamma_val:
         Value of spectral index for power-law and turnover
         models. By default spectral index is varied of range [0,7]
+    :param delta_val:
+        Value of spectral index for high frequencies in broken power-law
+        and turnover models. By default spectral index is varied in range [0,7].
     :param orf:
         String representing which overlap reduction function to use.
         By default we do not use any spatial correlations. Permitted
@@ -531,17 +595,17 @@ def common_red_noise_block(psd='powerlaw', prior='log-uniform',
             'monopole': utils.monopole_orf()}
 
     # common red noise parameters
-    if psd in ['powerlaw', 'turnover', 'turnover_knee', 'flat_powerlaw']:
+    if psd in ['powerlaw', 'turnover', 'turnover_knee',
+               'broken_powerlaw','flat_powerlaw']:
         amp_name = '{}_log10_A'.format(name)
         if prior == 'uniform':
-            log10_Agw = parameter.LinearExp(-18, -11)(amp_name)
-        elif prior == 'log-uniform' and gamma_val is not None:
-            if np.abs(gamma_val - 4.33) < 0.1:
-                log10_Agw = parameter.Uniform(-18, -14)(amp_name)
-            else:
-                log10_Agw = parameter.Uniform(-18, -11)(amp_name)
+            log10_Agw = parameter.LinearExp(-18, -10)(amp_name)
+        elif prior == 'log-uniform':
+            log10_Agw = parameter.Uniform(-18, -10)(amp_name)
+        elif prior == 'log-uniform-nanograv':
+            log10_Agw = parameter.Uniform(-18, -14)(amp_name)
         else:
-            log10_Agw = parameter.Uniform(-18, -11)(amp_name)
+            log10_Agw = parameter.Uniform(-18, -10)(amp_name)
 
         gam_name = '{}_gamma'.format(name)
         if gamma_val is not None:
@@ -552,6 +616,22 @@ def common_red_noise_block(psd='powerlaw', prior='log-uniform',
         # common red noise PSD
         if psd == 'powerlaw':
             cpl = utils.powerlaw(log10_A=log10_Agw, gamma=gamma_gw)
+        elif psd == 'broken_powerlaw':
+            delta_name = '{}_delta'.format(name)
+            kappa_name = '{}_kappa'.format(name)
+            log10_fb_name = '{}_log10_fb'.format(name)
+            kappa_gw = parameter.Uniform(0.01, 0.5)(kappa_name)
+            log10_fb_gw = parameter.Uniform(-10, -7)(log10_fb_name)
+
+            if delta_val is not None:
+                delta_gw = parameter.Constant(delta_val)(delta_name)
+            else:
+                delta_gw = parameter.Uniform(0, 7)(delta_name)
+            cpl = gpp.broken_powerlaw(log10_A=log10_Agw,
+                                      gamma=gamma_gw,
+                                      delta=delta_gw,
+                                      log10_fb=log10_fb_gw,
+                                      kappa=kappa_gw)
         elif psd == 'turnover':
             kappa_name = '{}_kappa'.format(name)
             lf0_name = '{}_log10_fbend'.format(name)
@@ -580,17 +660,35 @@ def common_red_noise_block(psd='powerlaw', prior='log-uniform',
     if psd == 'spectrum':
         rho_name = '{}_log10_rho'.format(name)
         if prior == 'uniform':
-            log10_rho_gw = parameter.LinearExp(-9, -4,
+            log10_rho_gw = parameter.LinearExp(-10, -4,
                                                size=components)(rho_name)
         elif prior == 'log-uniform':
-            log10_rho_gw = parameter.Uniform(-9, -4, size=components)(rho_name)
+            log10_rho_gw = parameter.Uniform(-10, -4,
+                                             size=components)(rho_name)
 
         cpl = gpp.free_spectrum(log10_rho=log10_rho_gw)
+
+    if select == 'backend':
+        # define selection by observing backend
+        selection = selections.Selection(selections.by_backend)
+    elif select == 'band' or select == 'band+':
+        # define selection by observing band
+        selection = selections.Selection(selections.by_band)
+    elif isinstance(select, list):
+        # define selection by list of custom backend
+        selection = selections.Selection(selections.custom_backends(select))
+    elif isinstance(select, dict):
+        # define selection by dict of custom backend
+        selection = selections.Selection(selections.custom_backends_dict(select))
+    else:
+        # define no selection
+        selection = selections.Selection(selections.no_selection)
 
     if orf is None:
         crn = gp_signals.FourierBasisGP(cpl, coefficients=coefficients,
                                         components=components, Tspan=Tspan,
-                                        name=name, pshift=pshift, pseed=pseed)
+                                        name=name, selection=selection,
+                                        pshift=pshift, pseed=pseed)
     elif orf in orfs.keys():
         crn = gp_signals.FourierBasisCommonGP(cpl, orfs[orf],
                                               components=components,
