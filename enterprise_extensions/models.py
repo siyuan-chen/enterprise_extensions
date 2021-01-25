@@ -30,8 +30,8 @@ PTA models from paper
 def model_singlepsr_noise(psr, tm_var=False, tm_linear=False,
                           tmparam_list=None, tm_svd=False, tm_norm=True,
                           red_var=True, psd='powerlaw', red_select=None,
-                          noisedict=None, white_vary=True,
-                          components=30, modes=None, wgts=None,
+                          noisedict=None, white_vary=True, red_components=30,
+                          dm_components=30, modes=None, wgts=None,
                           logfreq=False, nmodes_log=10, tnfreq=False,
                           upper_limit=False, is_wideband=False, use_dmdata=False,
                           dmjump_var=False, gamma_val=None, delta_val=None,
@@ -176,17 +176,18 @@ def model_singlepsr_noise(psr, tm_var=False, tm_linear=False,
         fmin = 10.0
         modes, wgts = model_utils.linBinning(Tspan, nmodes_log,
                                              1.0 / fmin / Tspan,
-                                             components, nmodes_log)
+                                             red_components, nmodes_log)
         wgts = wgts**2.0
 
     if tnfreq:
-        components = model_utils.get_tncoeff(Tspan, components)
+        red_components = model_utils.get_tncoeff(Tspan, red_components)
+        dm_components = model_utils.get_tncoeff(Tspan, dm_components)
 
     # red noise
     red_select = np.atleast_1d(red_select)
     for i in range(red_var):
         s += red_noise_block(psd=psd, prior=amp_prior, Tspan=Tspan,
-                             components=components, modes=modes, wgts=wgts,
+                             components=red_components, modes=modes, wgts=wgts,
                              gamma_val=gamma_val, delta_val=delta_val,
                              coefficients=coefficients, select=red_select[i])
 
@@ -196,7 +197,7 @@ def model_singlepsr_noise(psr, tm_var=False, tm_linear=False,
             if dmgp_kernel == 'diag':
                 s += dm_noise_block(gp_kernel=dmgp_kernel, psd=dm_psd,
                                     prior=amp_prior, Tspan=Tspan,
-                                    components=components,
+                                    components=dm_components,
                                     gamma_val=gamma_dm_val,
                                     coefficients=coefficients,
                                     tndm=tndm, select=dm_select)
@@ -212,7 +213,8 @@ def model_singlepsr_noise(psr, tm_var=False, tm_linear=False,
         if chrom_gp:
             s += chromatic_noise_block(gp_kernel=chrom_gp_kernel,
                                        psd=chrom_psd, idx=chrom_idx,
-                                       Tspan=Tspan, components=components,
+                                       Tspan=Tspan,
+                                       components=dm_components,
                                        gamma_val=gamma_chrom_val,
                                        nondiag_kernel=chrom_kernel,
                                        coefficients=coefficients,
