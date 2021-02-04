@@ -84,8 +84,7 @@ def white_noise_block(vary=False, inc_ecorr=False, gp_ecorr=False,
 
         else:
             ec = white_signals.EcorrKernelNoise(log10_ecorr=ecorr,
-                                                selection=backend_ng,
-                                                name=name)
+                                                selection=backend_ng, name=name)
 
     # combine signals
     if inc_ecorr:
@@ -97,9 +96,10 @@ def white_noise_block(vary=False, inc_ecorr=False, gp_ecorr=False,
 
 
 def red_noise_block(psd='powerlaw', prior='log-uniform', Tspan=None,
-                    components=30, gamma_val=None, delta_val=None,
-                    coefficients=False, select=None, modes=None,
-                    wgts=None, break_flat=False, break_flat_fq=None):
+                    name='red_noise', components=30, gamma_val=None,
+                    delta_val=None, coefficients=False, select=None,
+                    modes=None, wgts=None, break_flat=False,
+                    break_flat_fq=None):
     """
     Returns red noise model:
         1. Red noise modeled as a power-law with 30 sampling frequencies
@@ -207,33 +207,33 @@ def red_noise_block(psd='powerlaw', prior='log-uniform', Tspan=None,
             components_low = 2
 
         rn = gp_signals.FourierBasisGP(pl, components=components_low,
-                                       Tspan=Tspan, coefficients=coefficients,
+                                       Tspan=Tspan, name=name,
+                                       coefficients=coefficients,
                                        selection=selection)
 
-        rn_flat = gp_signals.FourierBasisGP(pl_flat,
+        rn_flat = gp_signals.FourierBasisGP(pl_flat, name=name+'_hf',
                                             modes=freqs[components_low:],
                                             coefficients=coefficients,
-                                            selection=selection,
-                                            name='red_noise_hf')
+                                            selection=selection)
         rn = rn + rn_flat
     else:
         rn = gp_signals.FourierBasisGP(pl, components=components,
-                                       Tspan=Tspan,
+                                       Tspan=Tspan, name=name,
                                        coefficients=coefficients,
-                                       selection=selection,
-                                       modes=modes)
+                                       selection=selection, modes=modes)
 
     if select == 'band+':  # Add the common component as well
         rn = rn + gp_signals.FourierBasisGP(pl, components=components,
-                                            Tspan=Tspan,
+                                            Tspan=Tspan, name=name+'_band',
                                             coefficients=coefficients)
 
     return rn
 
 
 def dm_noise_block(gp_kernel='diag', psd='powerlaw', nondiag_kernel='periodic',
-                   prior='log-uniform', Tspan=None, components=30, select=None,
-                   gamma_val=None, delta_val=None, coefficients=False, tndm=False):
+                   prior='log-uniform', name='dm', Tspan=None, components=30,
+                   select=None, gamma_val=None, delta_val=None,
+                   coefficients=False, tndm=False):
     """
     Returns DM noise model:
 
@@ -382,10 +382,10 @@ def dm_noise_block(gp_kernel='diag', psd='powerlaw', nondiag_kernel='periodic',
             dm_prior = gpk.dmx_ridge_prior(log10_sigma=log10_sigma)
 
     if select is None:
-        dmgp = gp_signals.BasisGP(dm_prior, dm_basis, name='dm_gp',
+        dmgp = gp_signals.BasisGP(dm_prior, dm_basis, name=name+'_gp',
                                   coefficients=coefficients)
     else:
-        dmgp = gp_signals.BasisGP(dm_prior, dm_basis, name='dm_gp',
+        dmgp = gp_signals.BasisGP(dm_prior, dm_basis, name=name+'_gp',
                                   coefficients=coefficients,
                                   selection=select)
 

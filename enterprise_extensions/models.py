@@ -187,9 +187,10 @@ def model_singlepsr_noise(psr, tm_var=False, tm_linear=False,
     red_select = np.atleast_1d(red_select)
     for i in range(red_var):
         s += red_noise_block(psd=psd, prior=amp_prior, Tspan=Tspan,
-                             components=red_components, modes=modes, wgts=wgts,
-                             gamma_val=gamma_val, delta_val=delta_val,
-                             coefficients=coefficients, select=red_select[i])
+                             name='red_noise_'+i, components=red_components,
+                             modes=modes, wgts=wgts, gamma_val=gamma_val,
+                             delta_val=delta_val, coefficients=coefficients,
+                             select=red_select[i])
 
     # DM variations
     if dm_var:
@@ -699,9 +700,10 @@ def model_general(psrs, tm_var=False, tm_linear=False, tmparam_list=None,
     red_select = np.atleast_1d(red_select)
     for i in range(red_var):
         s += red_noise_block(psd=red_psd, prior=amp_prior_red, Tspan=Tspan,
-                             components=red_components, modes=modes, wgts=wgts,
-                             coefficients=coefficients, select=red_select[i],
-                             break_flat=red_breakflat, break_flat_fq=red_breakflat_fq)
+                             name='red_noise_'+i, components=red_components,
+                             modes=modes, wgts=wgts, coefficients=coefficients,
+                             select=red_select[i], break_flat=red_breakflat,
+                             break_flat_fq=red_breakflat_fq)
 
     # common red noise block
     if orfs:
@@ -747,7 +749,7 @@ def model_general(psrs, tm_var=False, tm_linear=False, tmparam_list=None,
             s += chrom.dm_annual_signal()
         if dm_chrom:
             s += chromatic_noise_block(psd=dmchrom_psd, idx=dmchrom_idx,
-                                       name='chromatic', components=dm_components,
+                                       components=dm_components,
                                        coefficients=coefficients, select=chrom_select)
 
     # ephemeris model
