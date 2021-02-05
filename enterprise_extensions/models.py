@@ -186,8 +186,12 @@ def model_singlepsr_noise(psr, tm_var=False, tm_linear=False,
     # red noise
     red_select = np.atleast_1d(red_select)
     for i in range(red_var):
+        if i == 0:
+            red_name = 'red_noise'
+        else:
+            red_name = 'red_noise_'+str(i)
         s += red_noise_block(psd=psd, prior=amp_prior, Tspan=Tspan,
-                             name='red_noise_'+i, components=red_components,
+                             name=red_name, components=red_components,
                              modes=modes, wgts=wgts, gamma_val=gamma_val,
                              delta_val=delta_val, coefficients=coefficients,
                              select=red_select[i])
@@ -699,8 +703,12 @@ def model_general(psrs, tm_var=False, tm_linear=False, tmparam_list=None,
     # red noise
     red_select = np.atleast_1d(red_select)
     for i in range(red_var):
+        if i == 0:
+            red_name = 'red_noise'
+        else:
+            red_name = 'red_noise_'+str(i)
         s += red_noise_block(psd=red_psd, prior=amp_prior_red, Tspan=Tspan,
-                             name='red_noise_'+i, components=red_components,
+                             name=red_name, components=red_components,
                              modes=modes, wgts=wgts, coefficients=coefficients,
                              select=red_select[i], break_flat=red_breakflat,
                              break_flat_fq=red_breakflat_fq)
