@@ -47,7 +47,7 @@ def tm_delay(residuals, t2pulsar, tmparams_orig, tmparams, which='all'):
     # Sort the residuals
     isort = np.argsort(t2pulsar.toas(),kind='mergesort')
 
-    return new_res[isort] - residuals
+    return residuals - new_res[isort]
 
 # Model component building blocks #
 
@@ -59,7 +59,7 @@ def timing_block(tmparam_list=['RAJ', 'DECJ', 'F0', 'F1',
     :param tmparam_list: a list of parameters to vary in the model
     """
     # default 5-sigma prior above and below the parfile mean
-    tm_params = parameter.Uniform(-10.0, 10.0, size=len(tmparam_list))
+    tm_params = parameter.Uniform(-5.0, 5.0, size=len(tmparam_list))
 
     # timing model
     tm_func = tm_delay(tmparams=tm_params, which=tmparam_list)
