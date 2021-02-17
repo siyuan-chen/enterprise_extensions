@@ -49,6 +49,12 @@ def white_noise_block(vary=False, inc_ecorr=False, gp_ecorr=False,
         backend = selections.Selection(selections.by_backend)
         # define selection by nanograv backends
         backend_ng = selections.Selection(selections.nanograv_backends)
+    elif isinstance(select, list):
+        # define selection by list of custom backend
+        selection = selections.Selection(selections.custom_backends(select))
+    elif isinstance(select, dict):
+        # define selection by dict of custom backend
+        selection = selections.Selection(selections.custom_backends_dict(select))
     else:
         # define no selection
         backend = selections.Selection(selections.no_selection)
