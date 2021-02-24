@@ -147,7 +147,7 @@ def red_noise_block(psd='powerlaw', prior='log-uniform', Tspan=None,
             pl = utils.powerlaw(log10_A=log10_A, gamma=gamma)
         elif psd == 'broken_powerlaw':
             kappa = parameter.Uniform(0.01, 0.5)
-            log10_fb = parameter.Uniform(-10, -7)
+            log10_fb = parameter.Uniform(-10, -6)
 
             if delta_val is not None:
                 delta = parameter.Constant(delta_val)
@@ -283,7 +283,7 @@ def dm_noise_block(gp_kernel='diag', psd='powerlaw', nondiag_kernel='periodic',
                 dm_prior = utils.powerlaw(log10_A=log10_A_dm, gamma=gamma_dm)
             elif psd == 'broken_powerlaw':
                 kappa_dm = parameter.Uniform(0.01, 0.5)
-                log10_fb_dm = parameter.Uniform(-10, -7)
+                log10_fb_dm = parameter.Uniform(-10, -6)
 
                 if delta_val is not None:
                     delta_dm = parameter.Constant(delta_val)
@@ -459,7 +459,7 @@ def chromatic_noise_block(gp_kernel='nondiag', psd='powerlaw',
                 chm_prior = utils.powerlaw(log10_A=log10_A, gamma=gamma)
             elif psd == 'broken_powerlaw':
                 kappa = parameter.Uniform(0.01, 0.5)
-                log10_fb = parameter.Uniform(-10, -7)
+                log10_fb = parameter.Uniform(-10, -6)
 
                 if delta_val is not None:
                     delta = parameter.Constant(delta_val)
@@ -627,7 +627,7 @@ def common_red_noise_block(psd='powerlaw', prior='log-uniform',
             kappa_name = '{}_kappa'.format(name)
             log10_fb_name = '{}_log10_fb'.format(name)
             kappa_gw = parameter.Uniform(0.01, 0.5)(kappa_name)
-            log10_fb_gw = parameter.Uniform(-10, -7)(log10_fb_name)
+            log10_fb_gw = parameter.Uniform(-10, -6)(log10_fb_name)
 
             if delta_val is not None:
                 delta_gw = parameter.Constant(delta_val)(delta_name)
