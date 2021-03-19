@@ -13,6 +13,7 @@ from enterprise.signals import gp_bases as gpb
 from enterprise.signals import gp_priors as gpp
 from . import gp_kernels as gpk
 from . import chromatic as chrom
+from . import model_utils
 
 __all__ = ['white_noise_block',
            'red_noise_block',
@@ -102,9 +103,9 @@ def white_noise_block(vary=False, inc_ecorr=False, gp_ecorr=False,
 
 
 def red_noise_block(psd='powerlaw', prior='log-uniform', Tspan=None,
-                    name='red_noise', components=30, gamma_val=None,
-                    delta_val=None, coefficients=False, select=None,
-                    modes=None, wgts=None, break_flat=False,
+                    name='red_noise', components=30, tnfreq=False,
+                    gamma_val=None, delta_val=None, coefficients=False,
+                    select=None, modes=None, wgts=None, break_flat=False,
                     break_flat_fq=None):
     """
     Returns red noise model:
@@ -124,6 +125,8 @@ def red_noise_block(psd='powerlaw', prior='log-uniform', Tspan=None,
         powerlaw, turnover, or tprocess red noise
     :param coefficients: include latent coefficients in GP model?
     """
+    if tnfreq and Tspan is not None:
+        components = model_utils.get_tncoeff(Tspan, components)
     # red noise parameters that are common
     if psd in ['powerlaw', 'powerlaw_genmodes', 'turnover', 'broken_powerlaw',
                'flat_powerlaw', 'tprocess', 'tprocess_adapt', 'infinitepower']:
@@ -238,7 +241,7 @@ def red_noise_block(psd='powerlaw', prior='log-uniform', Tspan=None,
 
 def dm_noise_block(gp_kernel='diag', psd='powerlaw', nondiag_kernel='periodic',
                    prior='log-uniform', name='dm', Tspan=None, components=30,
-                   select=None, gamma_val=None, delta_val=None,
+                   tnfreq=False, select=None, gamma_val=None, delta_val=None,
                    coefficients=False, tndm=False):
     """
     Returns DM noise model:
@@ -259,6 +262,8 @@ def dm_noise_block(gp_kernel='diag', psd='powerlaw', nondiag_kernel='periodic',
         If given, this is the fixed slope of the power-law for
         powerlaw, turnover, or tprocess DM-variations
     """
+    if tnfreq and Tspan is not None:
+        components = model_utils.get_tncoeff(Tspan, components)
     # dm noise parameters that are common
     if gp_kernel == 'diag':
         if psd in ['powerlaw', 'turnover', 'broken_powerlaw',
@@ -402,9 +407,9 @@ def chromatic_noise_block(gp_kernel='nondiag', psd='powerlaw',
                           nondiag_kernel='periodic',
                           prior='log-uniform', name='chrom',
                           include_quadratic=False, Tspan=None,
-                          idx=4, components=30, select=None,
-                          gamma_val=None, delta_val=None,
-                          coefficients=False):
+                          idx=4, components=30, tnfreq=False,
+                          select=None, gamma_val=None,
+                          delta_val=None, coefficients=False):
     """
     Returns GP chromatic noise model :
 
@@ -435,6 +440,8 @@ def chromatic_noise_block(gp_kernel='nondiag', psd='powerlaw',
         Whether to keep coefficients of the GP.
 
     """
+    if tnfreq and Tspan is not None:
+        components = model_utils.get_tncoeff(Tspan, components)
     if idx is None:
         idx = parameter.Uniform(0, 7)
     if gp_kernel=='diag':
@@ -558,9 +565,9 @@ def chromatic_noise_block(gp_kernel='nondiag', psd='powerlaw',
 
 
 def common_red_noise_block(psd='powerlaw', prior='log-uniform',
-                           Tspan=None, components=30, gamma_val=None,
-                           delta_val=None, orf=None, name='gw',
-                           coefficients=False, select=None,
+                           Tspan=None, components=30, tnfreq=False,
+                           gamma_val=None, delta_val=None, orf=None,
+                           name='gw', coefficients=False, select=None,
                            pshift=False, pseed=None):
     """
     Returns common red noise model:
@@ -599,6 +606,9 @@ def common_red_noise_block(psd='powerlaw', prior='log-uniform',
 
     orfs = {'hd': utils.hd_orf(), 'dipole': utils.dipole_orf(),
             'monopole': utils.monopole_orf()}
+
+    if tnfreq and Tspan is not None:
+        components = model_utils.get_tncoeff(Tspan, components)
 
     # common red noise parameters
     if psd in ['powerlaw', 'turnover', 'turnover_knee',
