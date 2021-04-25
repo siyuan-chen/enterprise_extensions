@@ -29,6 +29,7 @@ PTA models from paper
 
 def model_singlepsr_noise(psr, tm_var=False, tm_linear=False,
                           tmparam_list=None, tm_svd=False, tm_norm=True,
+                          Tspan_red=None, Tspan_dm=None,
                           red_var=True, psd='powerlaw', red_select=None,
                           noisedict=None, white_vary=True, red_components=30,
                           dm_components=30, modes=None, wgts=None,
@@ -171,17 +172,17 @@ def model_singlepsr_noise(psr, tm_var=False, tm_linear=False,
         else:
             pass
 
-    Tspan = model_utils.get_tspan([psr])
+    if Tspan_red is None:
+        Tspan_red = model_utils.get_tspan([psr])
+    if Tspan_dm is None:
+        Tspan_dm = model_utils.get_tspan([psr])
+
     if logfreq:
         fmin = 10.0
-        modes, wgts = model_utils.linBinning(Tspan, nmodes_log,
-                                             1.0 / fmin / Tspan,
+        modes, wgts = model_utils.linBinning(Tspan_red, nmodes_log,
+                                             1.0 / fmin / Tspan_red,
                                              red_components, nmodes_log)
         wgts = wgts**2.0
-
-    if tnfreq:
-        red_components = model_utils.get_tncoeff(Tspan, red_components)
-        dm_components = model_utils.get_tncoeff(Tspan, dm_components)
 
     # red noise
     red_select = np.atleast_1d(red_select)
@@ -190,24 +191,24 @@ def model_singlepsr_noise(psr, tm_var=False, tm_linear=False,
             red_name = 'red_noise'
         else:
             red_name = 'red_noise_'+str(i)
-        s += red_noise_block(psd=psd, prior=amp_prior, Tspan=Tspan,
+        s += red_noise_block(psd=psd, prior=amp_prior, Tspan=Tspan_red,
                              name=red_name, components=red_components,
-                             modes=modes, wgts=wgts, gamma_val=gamma_val,
-                             delta_val=delta_val, coefficients=coefficients,
-                             select=red_select[i])
+                             tnfreq=tnfreq, modes=modes, wgts=wgts,
+                             gamma_val=gamma_val, delta_val=delta_val,
+                             coefficients=coefficients, select=red_select[i])
 
     # DM variations
     if dm_var:
         if dm_type == 'gp':
             if dmgp_kernel == 'diag':
                 s += dm_noise_block(gp_kernel=dmgp_kernel, psd=dm_psd,
-                                    prior=amp_prior, Tspan=Tspan,
+                                    prior=amp_prior, Tspan=Tspan_dm,
                                     components=dm_components,
-                                    gamma_val=gamma_dm_val,
+                                    tnfreq=tnfreq, gamma_val=gamma_dm_val,
                                     coefficients=coefficients,
                                     tndm=tndm, select=dm_select)
             elif dmgp_kernel == 'nondiag':
-                s += dm_noise_block(gp_kernel=dmgp_kernel, Tspan=Tspan,
+                s += dm_noise_block(gp_kernel=dmgp_kernel, Tspan=Tspan_dm,
                                     nondiag_kernel=dm_nondiag_kernel,
                                     coefficients=coefficients,
                                     tndm=tndm, select=dm_select)
@@ -218,7 +219,7 @@ def model_singlepsr_noise(psr, tm_var=False, tm_linear=False,
         if chrom_gp:
             s += chromatic_noise_block(gp_kernel=chrom_gp_kernel,
                                        psd=chrom_psd, idx=chrom_idx,
-                                       Tspan=Tspan,
+                                       Tspan=Tspan_dm, tnfreq=tnfreq,
                                        components=dm_components,
                                        gamma_val=gamma_chrom_val,
                                        nondiag_kernel=chrom_kernel,
@@ -243,7 +244,7 @@ def model_singlepsr_noise(psr, tm_var=False, tm_linear=False,
                                   for ii in range(num_dmdips)]
 
             dm_expdip_idx = (dm_expdip_idx if isinstance(dm_expdip_idx,list)
-                                           else [dm_expdip_idx])
+                                           else [dm_expdip_idx]*int(num_dips))
             for dd in range(num_dmdips):
                 s += chrom.dm_exponential_dip(tmin=tmin[dd], tmax=tmax[dd],
                                               idx=dm_expdip_idx[dd],
@@ -263,11 +264,11 @@ def model_singlepsr_noise(psr, tm_var=False, tm_linear=False,
             else:
                 cusp_name_base = 'dm_cusp_'
             dm_cusp_idx = (dm_cusp_idx if isinstance(dm_cusp_idx,list)
-                                           else [dm_cusp_idx])
+                                       else [dm_cusp_idx]*int(num_dm_cusps))
             for dd in range(1,num_dm_cusps+1):
                 s += chrom.dm_exponential_cusp(tmin=tmin[dd-1],
                                                tmax=tmax[dd-1],
-                                               idx=dm_cusp_idx,
+                                               idx=dm_cusp_idx[dd-1],
                                                sign=dm_cusp_sign,
                                                symmetric=dm_cusp_sym,
                                                name=cusp_name_base+str(dd))
@@ -290,10 +291,9 @@ def model_singlepsr_noise(psr, tm_var=False, tm_linear=False,
                                             symmetric=dm_dual_cusp_sym,
                                             name=dual_cusp_name_base+str(dd))
         if dm_sw_deter:
-            Tspan = psr.toas.max() - psr.toas.min()
             s+=solar_wind_block(ACE_prior=True, include_swgp=dm_sw_gp,
                                 swgp_prior=swgp_prior, swgp_basis=swgp_basis,
-                                Tspan=Tspan)
+                                Tspan=Tspan_dm)
 
     if extra_sigs is not None:
         s += extra_sigs
@@ -559,7 +559,8 @@ def model_2a(psrs, psd='powerlaw', noisedict=None, components=30,
 
 
 def model_general(psrs, tm_var=False, tm_linear=False, tmparam_list=None,
-                  Tspan=None, common_psd='powerlaw', red_psd='powerlaw',
+                  Tspan_common=None, Tspan_red=None, Tspan_dm=None,
+                  common_psd='powerlaw', red_psd='powerlaw',
                   common_components=30, red_components=30, dm_components=30,
                   modes=None, wgts=None, logfreq=False, nmodes_log=10,
                   tnfreq=False, noisedict=None, orfs=None, tm_svd=False,
@@ -683,22 +684,19 @@ def model_general(psrs, tm_var=False, tm_linear=False, tmparam_list=None,
             pass
 
     # find the maximum time span to set GW frequency sampling
-    if Tspan is not None:
-        Tspan = Tspan
-    else:
-        Tspan = model_utils.get_tspan(psrs)
+    if Tspan_common is None:
+        Tspan_common = model_utils.get_tspan(psrs)
+    if Tspan_red == 'common':
+        Tspan_red = Tspan_common
+    if Tspan_dm == 'common':
+        Tspan_dm = Tspan_common
 
     if logfreq:
         fmin = 10.0
-        modes, wgts = model_utils.linBinning(Tspan, nmodes_log,
-                                             1.0 / fmin / Tspan,
+        modes, wgts = model_utils.linBinning(Tspan_common, nmodes_log,
+                                             1.0 / fmin / Tspan_common,
                                              common_components, nmodes_log)
         wgts = wgts**2.0
-
-    if tnfreq:
-        common_components = model_utils.get_tncoeff(Tspan, common_components)
-        red_components = model_utils.get_tncoeff(Tspan, red_components)
-        dm_components = model_utils.get_tncoeff(Tspan, dm_components)
 
     # red noise
     red_select = np.atleast_1d(red_select)
@@ -707,11 +705,11 @@ def model_general(psrs, tm_var=False, tm_linear=False, tmparam_list=None,
             red_name = 'red_noise'
         else:
             red_name = 'red_noise_'+str(i)
-        s += red_noise_block(psd=red_psd, prior=amp_prior_red, Tspan=Tspan,
+        s += red_noise_block(psd=red_psd, prior=amp_prior_red, Tspan=Tspan_red,
                              name=red_name, components=red_components,
-                             modes=modes, wgts=wgts, coefficients=coefficients,
-                             select=red_select[i], break_flat=red_breakflat,
-                             break_flat_fq=red_breakflat_fq)
+                             tnfreq=tnfreq, modes=modes, wgts=wgts,
+                             coefficients=coefficients, select=red_select[i],
+                             break_flat=red_breakflat, break_flat_fq=red_breakflat_fq)
 
     # common red noise block
     if orfs:
@@ -719,21 +717,24 @@ def model_general(psrs, tm_var=False, tm_linear=False, tmparam_list=None,
         for orf in orfs:
             if orf == 'crn':
                 s += common_red_noise_block(psd=common_psd, prior=amp_prior_common,
-                                            Tspan=Tspan, components=common_components,
+                                            Tspan=Tspan_common, tnfreq=tnfreq,
+                                            components=common_components,
                                             coefficients=coefficients,
                                             gamma_val=gamma_common,
                                             delta_val=delta_common, name='crn',
                                             pshift=pshift, pseed=pseed)
             elif orf in ['monopole','dipole']:
                 s += common_red_noise_block(psd=common_psd, prior=amp_prior_common,
-                                            Tspan=Tspan, components=common_components,
+                                            Tspan=Tspan_common, tnfreq=tnfreq,
+                                            components=common_components,
                                             coefficients=coefficients,
                                             gamma_val=gamma_common,
                                             delta_val=delta_common, orf=orf, name=orf,
                                             pshift=pshift, pseed=pseed)
             elif orf == 'hd':
                 s += common_red_noise_block(psd=common_psd, prior=amp_prior_common,
-                                            Tspan=Tspan, components=common_components,
+                                            Tspan=Tspan_common, tnfreq=tnfreq,
+                                            components=common_components,
                                             coefficients=coefficients,
                                             gamma_val=gamma_common,
                                             delta_val=delta_common, orf='hd', name='gw',
@@ -742,22 +743,22 @@ def model_general(psrs, tm_var=False, tm_linear=False, tmparam_list=None,
                 pass
     else:
         s += common_red_noise_block(psd=common_psd, prior=amp_prior_common,
-                                    Tspan=Tspan, components=common_components,
-                                    coefficients=coefficients,
+                                    Tspan=Tspan_common, components=common_components,
+                                    tnfreq=tnfreq, coefficients=coefficients,
                                     gamma_val=gamma_common, delta_val=delta_common,
                                     name='gw', pshift=pshift, pseed=pseed)
 
     # DM variations
     if dm_var:
         if dm_type == 'gp':
-            s += dm_noise_block(gp_kernel='diag', psd=dm_psd,
-                                prior=amp_prior_dm, components=dm_components,
+            s += dm_noise_block(gp_kernel='diag', psd=dm_psd, prior=amp_prior_dm,
+                                Tspan=Tspan_dm, components=dm_components, tnfreq=tnfreq,
                                 coefficients=coefficients, tndm=tndm, select=dm_select)
         if dm_annual:
             s += chrom.dm_annual_signal()
         if dm_chrom:
-            s += chromatic_noise_block(psd=dmchrom_psd, idx=dmchrom_idx,
-                                       components=dm_components,
+            s += chromatic_noise_block(psd=dmchrom_psd, idx=dmchrom_idx, Tspan=Tspan_dm,
+                                       components=dm_components, tnfreq=tnfreq,
                                        coefficients=coefficients, select=chrom_select)
 
     # ephemeris model
