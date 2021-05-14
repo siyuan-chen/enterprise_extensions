@@ -186,6 +186,8 @@ def red_noise_block(psd='powerlaw', prior='log-uniform', Tspan=None,
             log10_rho = parameter.LinearExp(-10, -4, size=components)
         elif prior == 'log-uniform':
             log10_rho = parameter.Uniform(-10, -4, size=components)
+        elif prior == 'log-amplitude-epta':
+            log10_rho = parameter.Uniform(-10.45, -2.45, size=components)
 
         pl = gpp.free_spectrum(log10_rho=log10_rho)
 
@@ -325,6 +327,8 @@ def dm_noise_block(gp_kernel='diag', psd='powerlaw', nondiag_kernel='periodic',
                 log10_rho_dm = parameter.LinearExp(-10, -4, size=components)
             elif prior == 'log-uniform':
                 log10_rho_dm = parameter.Uniform(-10, -4, size=components)
+            elif prior == 'log-amplitude-epta':
+                log10_rho = parameter.Uniform(-10.45, -2.45, size=components)
 
             dm_prior = gpp.free_spectrum(log10_rho=log10_rho_dm)
 
@@ -490,6 +494,8 @@ def chromatic_noise_block(gp_kernel='nondiag', psd='powerlaw',
                 log10_rho = parameter.LinearExp(-10, -4, size=components)
             elif prior == 'log-uniform':
                 log10_rho = parameter.Uniform(-10, -4, size=components)
+            elif prior == 'log-amplitude-epta':
+                log10_rho = parameter.Uniform(-10.45, -2.45, size=components)
             chm_prior = gpp.free_spectrum(log10_rho=log10_rho)
 
     elif gp_kernel == 'nondiag':
@@ -681,6 +687,9 @@ def common_red_noise_block(psd='powerlaw', prior='log-uniform',
         elif prior == 'log-uniform':
             log10_rho_gw = parameter.Uniform(-10, -4,
                                              size=components)(rho_name)
+        elif prior == 'log-amplitude-epta':
+            log10_rho = parameter.Uniform(-10.45, -2.45,
+                                          size=components)(rho_name)
 
         cpl = gpp.free_spectrum(log10_rho=log10_rho_gw)
 
