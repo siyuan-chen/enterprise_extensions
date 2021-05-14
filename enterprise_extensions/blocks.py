@@ -328,7 +328,7 @@ def dm_noise_block(gp_kernel='diag', psd='powerlaw', nondiag_kernel='periodic',
             elif prior == 'log-uniform':
                 log10_rho_dm = parameter.Uniform(-10, -4, size=components)
             elif prior == 'log-amplitude-epta':
-                log10_rho = parameter.Uniform(-10.45, -2.45, size=components)
+                log10_rho_dm = parameter.Uniform(-10.45, -2.45, size=components)
 
             dm_prior = gpp.free_spectrum(log10_rho=log10_rho_dm)
 
@@ -688,8 +688,8 @@ def common_red_noise_block(psd='powerlaw', prior='log-uniform',
             log10_rho_gw = parameter.Uniform(-10, -4,
                                              size=components)(rho_name)
         elif prior == 'log-amplitude-epta':
-            log10_rho = parameter.Uniform(-10.45, -2.45,
-                                          size=components)(rho_name)
+            log10_rho_gw = parameter.Uniform(-10.45, -2.45,
+                                             size=components)(rho_name)
 
         cpl = gpp.free_spectrum(log10_rho=log10_rho_gw)
 
