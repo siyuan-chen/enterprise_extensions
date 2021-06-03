@@ -327,6 +327,8 @@ def dm_noise_block(gp_kernel='diag', psd='powerlaw', nondiag_kernel='periodic',
                 log10_rho_dm = parameter.LinearExp(-10, -4, size=components)
             elif prior == 'log-uniform':
                 log10_rho_dm = parameter.Uniform(-10, -4, size=components)
+            elif prior == 'log-uniform-nanograv':
+                log10_rho_dm = parameter.Uniform(-9, -4, size=components)
             elif prior == 'log-amplitude-epta':
                 log10_rho_dm = parameter.Uniform(-10.45, -2.45, size=components)
 
