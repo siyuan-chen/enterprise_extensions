@@ -903,24 +903,25 @@ def model_general(psrs, tm_var=False, tm_linear=False, tmparam_list=None,
                              break_flat=red_breakflat, break_flat_fq=red_breakflat_fq)
 
     # common red noise block
-    crn = []
-    if orf_names is None:
-        orf_names = orf
-    for elem, elem_name in zip(orf.split(','), orf_names.split(',')):
-        if elem == 'zero_diag_bin_orf' or elem == 'zero_diag_legendre_orf':
-            log10_A_val = log10_A_common
-        else:
-            log10_A_val = None
-        crn.append(common_red_noise_block(psd=common_psd, prior=amp_prior_common, tnfreq=tnfreq,
-                                          Tspan=Tspan_common, components=common_components,
-                                          log10_A_val=log10_A_val, gamma_val=gamma_common,
-                                          delta_val=delta_common, name='gw_{}'.format(elem_name),
-                                          orf=elem, orf_ifreq=orf_ifreq, leg_lmax=leg_lmax,
-                                          coefficients=coefficients, pshift=pshift, pseed=None))
-        # orf_ifreq only affects freq_hd model.
-        # leg_lmax only affects (zero_diag_)legendre_orf model.
-    crn = functools.reduce((lambda x, y: x+y), crn)
-    s += crn
+    if orf:
+        crn = []
+        if orf_names is None:
+            orf_names = orf
+        for elem, elem_name in zip(orf.split(','), orf_names.split(',')):
+            if elem == 'zero_diag_bin_orf' or elem == 'zero_diag_legendre_orf':
+                log10_A_val = log10_A_common
+            else:
+                log10_A_val = None
+            crn.append(common_red_noise_block(psd=common_psd, prior=amp_prior_common, tnfreq=tnfreq,
+                                              Tspan=Tspan_common, components=common_components,
+                                              log10_A_val=log10_A_val, gamma_val=gamma_common,
+                                              delta_val=delta_common, name='gw_{}'.format(elem_name),
+                                              orf=elem, orf_ifreq=orf_ifreq, leg_lmax=leg_lmax,
+                                              coefficients=coefficients, pshift=pshift, pseed=None))
+            # orf_ifreq only affects freq_hd model.
+            # leg_lmax only affects (zero_diag_)legendre_orf model.
+        crn = functools.reduce((lambda x, y: x+y), crn)
+        s += crn
 
     # DM variations
     if dm_var:

@@ -360,3 +360,21 @@ def generalized_gwpol_psd(f, log10_A_tt=-15, log10_A_st=-15, alpha_tt=-2/3, alph
         (8*np.pi**2*f**3)
 
     return S_psd * np.repeat(df, 2)
+
+
+@signal_base.function
+def chebyshev_orf(pos1, pos2, params):
+    """
+    Chebyshev polynomial decomposition of the spatial correlation function
+    """
+    if np.all(pos1 == pos2):
+        return 1.
+    else:
+        zij = np.arccos(np.dot(pos1, pos2))
+        x = (zij - 0.5*np.pi)*2./np.pi
+        c1,c2,c3,c4 = params
+        ch = c1 + c2*x + c3*(2.*x*x-1.) + c4*(4.*x**3-3.*x)
+        if -1. < ch < 1.:
+            return ch
+        else:
+            return 100.

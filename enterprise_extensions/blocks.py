@@ -749,7 +749,8 @@ def common_red_noise_block(psd='powerlaw', prior='log-uniform',
             'legendre_orf': model_orfs.legendre_orf(params=parameter.Uniform(
                 -1.0, 1.0, size=leg_lmax+1)('gw_orf_legendre')),
             'zero_diag_legendre_orf': model_orfs.zero_diag_legendre_orf(params=parameter.Uniform(
-                -1.0, 1.0, size=leg_lmax+1)('gw_orf_legendre_zero_diag'))}
+                -1.0, 1.0, size=leg_lmax+1)('gw_orf_legendre_zero_diag')),
+            'chebyshev_orf': model_orfs.chebyshev_orf(params=parameter.Uniform(-1.0, 1.0, size=4)('ch_coeff'))}
 
     if tnfreq and Tspan is not None:
         components = model_utils.get_tncoeff(Tspan, components)
