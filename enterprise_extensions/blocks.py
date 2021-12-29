@@ -510,7 +510,8 @@ def chromatic_noise_block(gp_kernel='nondiag', psd='powerlaw',
                           dt=15, df=200, Tspan=None,
                           components=30, tnfreq=False,
                           select=None, gamma_val=None,
-                          delta_val=None, coefficients=False):
+                          delta_val=None, coefficients=False,
+                          tndm=False):
     """
     Returns GP chromatic noise model :
 
@@ -550,8 +551,12 @@ def chromatic_noise_block(gp_kernel='nondiag', psd='powerlaw',
     if idx is None:
         idx = parameter.Uniform(0, 7)
     if gp_kernel=='diag':
-        chm_basis = gpb.createfourierdesignmatrix_chromatic(nmodes=components,
+        if tndm:
+            chm_basis = gpb.createfourierdesignmatrix_dm_tn(nmodes=components,
                                                             Tspan=Tspan,idx=idx)
+        else:
+            chm_basis = gpb.createfourierdesignmatrix_chromatic(nmodes=components,
+                                                                Tspan=Tspan,idx=idx)
         if psd in ['powerlaw', 'turnover', 'broken_powerlaw', 'flat_powerlaw']:
             if prior == 'uniform':
                 log10_A = parameter.LinearExp(-18, -10)

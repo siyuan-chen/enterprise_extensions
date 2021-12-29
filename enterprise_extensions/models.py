@@ -265,7 +265,7 @@ def model_singlepsr_noise(psr, tm_var=False, tm_linear=False,
                                        dt=chrom_dt, df=chrom_df,
                                        include_quadratic=chrom_quad,
                                        coefficients=coefficients,
-                                       select=chrom_select)
+                                       tndm=tndm, select=chrom_select)
 
         if dm_expdip:
             if dm_expdip_tmin is None and dm_expdip_tmax is None:
@@ -927,12 +927,12 @@ def model_general(psrs, tm_var=False, tm_linear=False, tmparam_list=None,
         if dm_type == 'gp':
             s += dm_noise_block(gp_kernel='diag', psd=dm_psd, prior=amp_prior_dm,
                                 Tspan=Tspan_dm, components=dm_components, tnfreq=tnfreq,
-                                coefficients=coefficients, tndm=tndm, select=dm_select)
+                                tndm=tndm, coefficients=coefficients, select=dm_select)
         if dm_annual:
             s += chrom.dm_annual_signal()
         if dm_chrom:
             s += chromatic_noise_block(psd=dmchrom_psd, idx=dmchrom_idx, Tspan=Tspan_dm,
-                                       components=dm_components, tnfreq=tnfreq,
+                                       components=dm_components, tnfreq=tnfreq, tndm=tndm,
                                        coefficients=coefficients, select=chrom_select)
 
     # ephemeris model
