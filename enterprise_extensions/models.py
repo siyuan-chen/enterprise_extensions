@@ -27,8 +27,8 @@ from enterprise_extensions.timing import timing_block
 def model_singlepsr_noise(psr, tm_var=False, tm_linear=False,
                           tmparam_list=None, tm_svd=False, tm_norm=True,
                           noisedict=None, white_vary=True, components=30,
-                          Tspan_red=None, Tspan_dm=None,
-                          red_var=True, psd='powerlaw',
+                          logmin=None, logmax=None, Tspan_red=None,
+                          Tspan_dm=None, red_var=True, psd='powerlaw',
                           red_select=None, red_components=30,
                           dm_components=30, modes=None, wgts=None,
                           logfreq=False, nmodes_log=10, tnfreq=False,
@@ -219,8 +219,8 @@ def model_singlepsr_noise(psr, tm_var=False, tm_linear=False,
                                     Tspan=Tspan, components=gw_components,
                                     gamma_val=fact_like_gamma, delta_val=None,
                                     orf=None, name='gw',
-                                    coefficients=coefficients,
-                                    pshift=False, pseed=None)
+                                    coefficients=coefficients, pshift=False,
+                                    pseed=None, logmin=logmin, logmax=logmax)
 
     # red noise
     red_select = np.atleast_1d(red_select)
@@ -231,6 +231,7 @@ def model_singlepsr_noise(psr, tm_var=False, tm_linear=False,
             red_name = 'red_noise_'+str(i)
         s += red_noise_block(psd=psd, prior=amp_prior, Tspan=Tspan_red,
                              name=red_name, components=red_components,
+                             logmin=logmin, logmax=logmax,
                              tnfreq=tnfreq, modes=modes, wgts=wgts,
                              gamma_val=gamma_val, delta_val=delta_val,
                              coefficients=coefficients, select=red_select[i])
@@ -244,13 +245,15 @@ def model_singlepsr_noise(psr, tm_var=False, tm_linear=False,
                                     components=dm_components,
                                     tnfreq=tnfreq, gamma_val=gamma_dm_val,
                                     coefficients=coefficients,
-                                    tndm=tndm, select=dm_select)
+                                    tndm=tndm, select=dm_select,
+                                    logmin=logmin, logmax=logmax)
             elif dmgp_kernel == 'nondiag':
                 s += dm_noise_block(gp_kernel=dmgp_kernel, Tspan=Tspan_dm,
                                     nondiag_kernel=dm_nondiag_kernel,
                                     dt=dm_dt, df=dm_df,
                                     coefficients=coefficients,
-                                    tndm=tndm, select=dm_select)
+                                    tndm=tndm, select=dm_select,
+                                    logmin=logmin, logmax=logmax)
         elif dm_type == 'dmx':
             s += chrom.dmx_signal(dmx_data=dmx_data[psr.name])
         if dm_annual:
@@ -265,7 +268,8 @@ def model_singlepsr_noise(psr, tm_var=False, tm_linear=False,
                                        dt=chrom_dt, df=chrom_df,
                                        include_quadratic=chrom_quad,
                                        coefficients=coefficients,
-                                       tndm=tndm, select=chrom_select)
+                                       tndm=tndm, select=chrom_select,
+                                       logmin=logmin, logmax=logmax)
 
         if dm_expdip:
             if dm_expdip_tmin is None and dm_expdip_tmax is None:
@@ -662,8 +666,8 @@ def model_2a(psrs, psd='powerlaw', noisedict=None, components=30,
 def model_general(psrs, tm_var=False, tm_linear=False, tmparam_list=None,
                   tm_svd=False, tm_norm=True, tm_marg=False,
                   Tspan_common=None, Tspan_red=None, Tspan_dm=None,
-                  common_psd='powerlaw', common_components=30,
-                  red_components=30, dm_components=30,
+                  logmin=None, logmax=None, common_psd='powerlaw',
+                  common_components=30, red_components=30, dm_components=30,
                   modes=None, wgts=None, logfreq=False,
                   nmodes_log=10, tnfreq=False, dense_like=False,
                   noisedict=None, white_vary=False, gequad=False,
@@ -898,6 +902,7 @@ def model_general(psrs, tm_var=False, tm_linear=False, tmparam_list=None,
             red_name = 'red_noise_'+str(i)
         s += red_noise_block(psd=red_psd, prior=amp_prior_red, Tspan=Tspan_red,
                              name=red_name, components=red_components,
+                             logmin=logmin, logmax=logmax,
                              tnfreq=tnfreq, modes=modes, wgts=wgts,
                              coefficients=coefficients, select=red_select[i],
                              break_flat=red_breakflat, break_flat_fq=red_breakflat_fq)
@@ -914,6 +919,7 @@ def model_general(psrs, tm_var=False, tm_linear=False, tmparam_list=None,
                 log10_A_val = None
             crn.append(common_red_noise_block(psd=common_psd, prior=amp_prior_common, tnfreq=tnfreq,
                                               Tspan=Tspan_common, components=common_components,
+                                              logmin=logmin, logmax=logmax,
                                               log10_A_val=log10_A_val, gamma_val=gamma_common,
                                               delta_val=delta_common, name='gw_{}'.format(elem_name),
                                               orf=elem, orf_ifreq=orf_ifreq, leg_lmax=leg_lmax,
@@ -928,13 +934,15 @@ def model_general(psrs, tm_var=False, tm_linear=False, tmparam_list=None,
         if dm_type == 'gp':
             s += dm_noise_block(gp_kernel='diag', psd=dm_psd, prior=amp_prior_dm,
                                 Tspan=Tspan_dm, components=dm_components, tnfreq=tnfreq,
-                                tndm=tndm, coefficients=coefficients, select=dm_select)
+                                tndm=tndm, coefficients=coefficients, select=dm_select,
+                                logmin=logmin, logmax=logmax)
         if dm_annual:
             s += chrom.dm_annual_signal()
         if dm_chrom:
             s += chromatic_noise_block(psd=dmchrom_psd, idx=dmchrom_idx, Tspan=Tspan_dm,
                                        components=dm_components, tnfreq=tnfreq, tndm=tndm,
-                                       coefficients=coefficients, select=chrom_select)
+                                       coefficients=coefficients, select=chrom_select,
+                                       logmin=logmin, logmax=logmax,)
 
     # ephemeris model
     if bayesephem:

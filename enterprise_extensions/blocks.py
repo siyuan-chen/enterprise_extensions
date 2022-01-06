@@ -142,12 +142,9 @@ def red_noise_block(psd='powerlaw', prior='log-uniform', Tspan=None,
                 log10_A = parameter.Uniform(logmin, logmax)
         else:
             if prior == 'uniform':
-                log10_A = parameter.LinearExp(-20, -11)
-            elif prior == 'log-uniform' and gamma_val is not None:
-                if np.abs(gamma_val - 4.33) < 0.1:
-                    log10_A = parameter.Uniform(-20, -11)
-                else:
-                    log10_A = parameter.Uniform(-20, -11)
+                log10_A = parameter.LinearExp(-18, -10)
+            elif prior == 'log-uniform':
+                log10_A = parameter.Uniform(-18, -10)
             else:
                 log10_A = parameter.Uniform(-20, -11)
 
@@ -334,7 +331,8 @@ def bwm_sglpsr_block(Tmin, Tmax, amp_prior='log-uniform',
 def dm_noise_block(gp_kernel='diag', psd='powerlaw', nondiag_kernel='periodic',
                    prior='log-uniform', name='dm', dt=15, df=200, Tspan=None,
                    components=30, tnfreq=False, select=None, gamma_val=None,
-                   delta_val=None, coefficients=False, tndm=False):
+                   delta_val=None, coefficients=False, tndm=False,
+                   logmin=None, logmax=None):
     """
     Returns DM noise model:
 
@@ -365,14 +363,18 @@ def dm_noise_block(gp_kernel='diag', psd='powerlaw', nondiag_kernel='periodic',
         if psd in ['powerlaw', 'turnover', 'broken_powerlaw',
                    'flat_powerlaw', 'tprocess', 'tprocess_adapt']:
             # parameters shared by PSD functions
-            if prior == 'uniform':
-                log10_A_dm = parameter.LinearExp(-18, -10)
-            elif prior == 'log-uniform':
-                log10_A_dm = parameter.Uniform(-18, -10)
-            elif prior == 'log-uniform-nanograv':
-                log10_A_dm = parameter.Uniform(-18, -14)
+            if logmin is not None and logmax is not None:
+                if prior == 'uniform':
+                    log10_A_dm = parameter.LinearExp(logmin, logmax)
+                elif prior == 'log-uniform':
+                    log10_A_dm = parameter.Uniform(logmin, logmax)
             else:
-                log10_A_dm = parameter.Uniform(-18, -10)
+                if prior == 'uniform':
+                    log10_A_dm = parameter.LinearExp(-18, -10)
+                elif prior == 'log-uniform':
+                    log10_A_dm = parameter.Uniform(-18, -10)
+                else:
+                    log10_A_dm = parameter.Uniform(-20, -11)
 
             if gamma_val is not None:
                 gamma_dm = parameter.Constant(gamma_val)
@@ -511,7 +513,7 @@ def chromatic_noise_block(gp_kernel='nondiag', psd='powerlaw',
                           components=30, tnfreq=False,
                           select=None, gamma_val=None,
                           delta_val=None, coefficients=False,
-                          tndm=False):
+                          tndm=False, logmin=None, logmax=None):
     """
     Returns GP chromatic noise model :
 
@@ -558,14 +560,18 @@ def chromatic_noise_block(gp_kernel='nondiag', psd='powerlaw',
             chm_basis = gpb.createfourierdesignmatrix_chromatic(nmodes=components,
                                                                 Tspan=Tspan,idx=idx)
         if psd in ['powerlaw', 'turnover', 'broken_powerlaw', 'flat_powerlaw']:
-            if prior == 'uniform':
-                log10_A = parameter.LinearExp(-18, -10)
-            elif prior == 'log-uniform':
-                log10_A = parameter.Uniform(-18, -10)
-            elif prior == 'log-uniform-nanograv':
-                log10_A = parameter.Uniform(-18, -14)
+            if logmin is not None and logmax is not None:
+                if prior == 'uniform':
+                    log10_A = parameter.LinearExp(logmin, logmax)
+                elif prior == 'log-uniform':
+                    log10_A = parameter.Uniform(logmin, logmax)
             else:
-                log10_A = parameter.Uniform(-18, -10)
+                if prior == 'uniform':
+                    log10_A = parameter.LinearExp(-18, -10)
+                elif prior == 'log-uniform':
+                    log10_A = parameter.Uniform(-18, -10)
+                else:
+                    log10_A = parameter.Uniform(-20, -11)
             if gamma_val is not None:
                 gamma = parameter.Constant(gamma_val)
             else:
@@ -765,24 +771,16 @@ def common_red_noise_block(psd='powerlaw', prior='log-uniform',
         if logmin is not None and logmax is not None:
             if prior == 'uniform':
                 log10_Agw = parameter.LinearExp(logmin, logmax)(amp_name)
-            elif prior == 'log-uniform' and gamma_val is not None:
-                if np.abs(gamma_val - 4.33) < 0.1:
-                    log10_Agw = parameter.Uniform(logmin, logmax)(amp_name)
-                else:
-                    log10_Agw = parameter.Uniform(logmin, logmax)(amp_name)
-            else:
+            elif prior == 'log-uniform':
                 log10_Agw = parameter.Uniform(logmin, logmax)(amp_name)
 
         else:
             if prior == 'uniform':
-                log10_Agw = parameter.LinearExp(-18, -11)(amp_name)
-            elif prior == 'log-uniform' and gamma_val is not None:
-                if np.abs(gamma_val - 4.33) < 0.1:
-                    log10_Agw = parameter.Uniform(-18, -14)(amp_name)
-                else:
-                    log10_Agw = parameter.Uniform(-18, -11)(amp_name)
+                log10_Agw = parameter.LinearExp(-18, -10)(amp_name)
+            elif prior == 'log-uniform':
+                log10_Agw = parameter.Uniform(-18, -10)(amp_name)
             else:
-                log10_Agw = parameter.Uniform(-18, -11)(amp_name)
+                log10_Agw = parameter.Uniform(-20, -11)(amp_name)
 
         gam_name = '{}_gamma'.format(name)
         if gamma_val is not None:
