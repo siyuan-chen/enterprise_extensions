@@ -190,12 +190,18 @@ def red_noise_block(psd='powerlaw', prior='log-uniform', Tspan=None,
             pl = gpp.infinitepower()
 
     if psd == 'spectrum':
-        if prior == 'uniform':
-            log10_rho = parameter.LinearExp(-10, -4, size=components)
-        elif prior == 'log-uniform':
-            log10_rho = parameter.Uniform(-10, -4, size=components)
-        elif prior == 'log-amplitude-epta':
-            log10_rho = parameter.Uniform(-10.45, -2.45, size=components)
+        if logmin is not None and logmax is not None:
+            if prior == 'uniform':
+                log10_rho = parameter.LinearExp(logmin, logmax, size=components)
+            elif prior == 'log-uniform':
+                log10_rho = parameter.Uniform(logmin, logmax, size=components)
+        else:
+            if prior == 'uniform':
+                log10_rho = parameter.LinearExp(-10, -4, size=components)
+            elif prior == 'log-uniform':
+                log10_rho = parameter.Uniform(-10, -4, size=components)
+            else:
+                log10_rho = parameter.Uniform(-9, -4, size=components)
 
         pl = gpp.free_spectrum(log10_rho=log10_rho)
 
@@ -419,14 +425,20 @@ def dm_noise_block(gp_kernel='diag', psd='powerlaw', nondiag_kernel='periodic',
                                                nfreq=nfreq_dm)
 
         if psd == 'spectrum':
-            if prior == 'uniform':
-                log10_rho_dm = parameter.LinearExp(-10, -4, size=components)
-            elif prior == 'log-uniform':
-                log10_rho_dm = parameter.Uniform(-10, -4, size=components)
-            elif prior == 'log-uniform-nanograv':
-                log10_rho_dm = parameter.Uniform(-9, -4, size=components)
-            elif prior == 'log-amplitude-epta':
-                log10_rho_dm = parameter.Uniform(-10.45, -2.45, size=components)
+            if logmin is not None and logmax is not None:
+                if prior == 'uniform':
+                    log10_rho_dm = parameter.LinearExp(logmin, logmax,
+                                                       size=components)
+                elif prior == 'log-uniform':
+                    log10_rho_dm = parameter.Uniform(logmin, logmax,
+                                                     size=components)
+            else:
+                if prior == 'uniform':
+                    log10_rho_dm = parameter.LinearExp(-10, -4, size=components)
+                elif prior == 'log-uniform':
+                    log10_rho_dm = parameter.Uniform(-10, -4, size=components)
+                else:
+                    log10_rho_dm = parameter.Uniform(-9, -4, size=components)
 
             dm_prior = gpp.free_spectrum(log10_rho=log10_rho_dm)
 
@@ -602,12 +614,21 @@ def chromatic_noise_block(gp_kernel='nondiag', psd='powerlaw',
                                               log10_B=log10_B)
 
         if psd == 'spectrum':
-            if prior == 'uniform':
-                log10_rho = parameter.LinearExp(-10, -4, size=components)
-            elif prior == 'log-uniform':
-                log10_rho = parameter.Uniform(-10, -4, size=components)
-            elif prior == 'log-amplitude-epta':
-                log10_rho = parameter.Uniform(-10.45, -2.45, size=components)
+            if logmin is not None and logmax is not None:
+                if prior == 'uniform':
+                    log10_rho = parameter.LinearExp(logmin, logmax,
+                                                    size=components)
+                elif prior == 'log-uniform':
+                    log10_rho = parameter.Uniform(logmin, logmax,
+                                                  size=components)
+            else:
+                if prior == 'uniform':
+                    log10_rho = parameter.LinearExp(-10, -4, size=components)
+                elif prior == 'log-uniform':
+                    log10_rho = parameter.Uniform(-10, -4, size=components)
+                else:
+                    log10_rho = parameter.Uniform(-9, -4, size=components)
+
             chm_prior = gpp.free_spectrum(log10_rho=log10_rho)
 
     elif gp_kernel == 'nondiag':
@@ -834,15 +855,23 @@ def common_red_noise_block(psd='powerlaw', prior='log-uniform',
 
     if psd == 'spectrum':
         rho_name = '{}_log10_rho'.format(name)
-        if prior == 'uniform':
-            log10_rho_gw = parameter.LinearExp(-10, -4,
-                                               size=components)(rho_name)
-        elif prior == 'log-uniform':
-            log10_rho_gw = parameter.Uniform(-10, -4,
-                                             size=components)(rho_name)
-        elif prior == 'log-amplitude-epta':
-            log10_rho_gw = parameter.Uniform(-10.45, -2.45,
-                                             size=components)(rho_name)
+        if logmin is not None and logmax is not None:
+            if prior == 'uniform':
+                log10_rho_gw = parameter.LinearExp(logmin, logmax,
+                                                   size=components)(rho_name)
+            elif prior == 'log-uniform':
+                log10_rho_gw = parameter.Uniform(logmin, logmax,
+                                                 size=components)(rho_name)
+        else:
+            if prior == 'uniform':
+                log10_rho_gw = parameter.LinearExp(-10, -4,
+                                                   size=components)(rho_name)
+            elif prior == 'log-uniform':
+                log10_rho_gw = parameter.Uniform(-10, -4,
+                                                 size=components)(rho_name)
+            else:
+                log10_rho_gw = parameter.Uniform(-9, -4,
+                                                 size=components)(rho_name)
 
         cpl = gpp.free_spectrum(log10_rho=log10_rho_gw)
 
