@@ -735,9 +735,11 @@ def common_red_noise_block(psd='powerlaw', prior='log-uniform',
         Value of spectral index for high frequencies in broken power-law
         and turnover models. By default spectral index is varied in range [0,7].\
     :param logmin:
-        Specify the lower bound of the prior on the amplitude.
+        Specify the lower bound of the prior on the amplitude for all psd but 'spectrum'.
+        If psd=='spectrum', then this specifies the lower prior on log10_rho_gw
     :param logmax:
-        Specify the upper bound of the prior on the amplitude
+        Specify the lower bound of the prior on the amplitude for all psd but 'spectrum'.
+        If psd=='spectrum', then this specifies the lower prior on log10_rho_gw
     :param orf:
         String representing which overlap reduction function to use.
         By default we do not use any spatial correlations. Permitted
