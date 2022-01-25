@@ -354,13 +354,12 @@ def model_singlepsr_noise(psr, tm_var=False, tm_linear=False,
         s += extra_sigs
 
     # adding white-noise, and acting on psr objects
-    if 'pta' in psr.flags.keys():
-        if 'NANOGrav' in psr.flags['pta'] and not is_wideband:
-            s2 = s + white_noise_block(vary=white_vary, inc_ecorr=True,
-                                       select=select)
-            model = s2(psr)
-            if psr_model:
-                Model = s2
+    if 'NANOGrav' in psr.flags['pta'] and not is_wideband:
+        s2 = s + white_noise_block(vary=white_vary, inc_ecorr=True,
+                                   select=select)
+        model = s2(psr)
+        if psr_model:
+            Model = s2
     else:
         s3 = s + white_noise_block(vary=white_vary, inc_ecorr=False,
                                    select=select)
@@ -473,11 +472,10 @@ def model_1(psrs, psd='powerlaw', noisedict=None, white_vary=False,
     # adding white-noise, and acting on psr objects
     models = []
     for p in psrs:
-        if 'pta' in p.flags.keys():
-            if 'NANOGrav' in p.flags['pta'] and not is_wideband:
-                s2 = s + white_noise_block(vary=white_vary, inc_ecorr=True,
-                                           select=select)
-                models.append(s2(p))
+        if 'NANOGrav' in p.flags['pta'] and not is_wideband:
+            s2 = s + white_noise_block(vary=white_vary, inc_ecorr=True,
+                                       select=select)
+            models.append(s2(p))
         else:
             s3 = s + white_noise_block(vary=white_vary, inc_ecorr=False,
                                        select=select)
@@ -638,11 +636,10 @@ def model_2a(psrs, psd='powerlaw', noisedict=None, components=30,
     # adding white-noise, and acting on psr objects
     models = []
     for p in psrs:
-        if 'pta' in p.flags.keys():
-            if 'NANOGrav' in p.flags['pta'] and not is_wideband:
-                s2 = s + white_noise_block(vary=white_vary, inc_ecorr=True,
-                                           select=select)
-                models.append(s2(p))
+        if 'NANOGrav' in p.flags['pta'] and not is_wideband:
+            s2 = s + white_noise_block(vary=white_vary, inc_ecorr=True,
+                                       select=select)
+            models.append(s2(p))
         else:
             s3 = s + white_noise_block(vary=white_vary, inc_ecorr=False,
                                        select=select)
@@ -966,24 +963,23 @@ def model_general(psrs, tm_var=False, tm_linear=False, tmparam_list=None,
     # adding white-noise, and acting on psr objects
     models = []
     for p in psrs:
-        if 'pta' in p.flags.keys():
-            if 'NANOGrav' in p.flags['pta'] and not is_wideband:
-                s2 = s + white_noise_block(vary=white_vary, inc_ecorr=True,
-                                           select=select)
-                if gequad:
-                    s2 += white_signals.EquadNoise(log10_equad=parameter.Uniform(-9, -5),
-                                                   selection=selections.Selection(selections.no_selection),
-                                                   name='gequad')
-                if '1713' in p.name and dm_var:
-                    tmin = p.toas.min() / const.day
-                    tmax = p.toas.max() / const.day
-                    s3 = s2
-                    for dd in range(num_dips):
-                        s3 += chrom.dm_exponential_dip(tmin=tmin, tmax=tmax, idx=2, sign='negative',
-                                                       name='dmexp_{0}'.format(dd+1))
-                    models.append(s3(p))
-                else:
-                    models.append(s2(p))
+        if 'NANOGrav' in p.flags['pta'] and not is_wideband:
+            s2 = s + white_noise_block(vary=white_vary, inc_ecorr=True,
+                                       select=select)
+            if gequad:
+                s2 += white_signals.EquadNoise(log10_equad=parameter.Uniform(-9, -5),
+                                               selection=selections.Selection(selections.no_selection),
+                                               name='gequad')
+            if '1713' in p.name and dm_var:
+                tmin = p.toas.min() / const.day
+                tmax = p.toas.max() / const.day
+                s3 = s2
+                for dd in range(num_dips):
+                    s3 += chrom.dm_exponential_dip(tmin=tmin, tmax=tmax, idx=2, sign='negative',
+                                                   name='dmexp_{0}'.format(dd+1))
+                models.append(s3(p))
+            else:
+                models.append(s2(p))
         else:
             s4 = s + white_noise_block(vary=white_vary, inc_ecorr=False,
                                        select=select)
@@ -1116,11 +1112,10 @@ def model_2b(psrs, psd='powerlaw', noisedict=None, white_vary=False,
     # adding white-noise, and acting on psr objects
     models = []
     for p in psrs:
-        if 'pta' in p.flags.keys():
-            if 'NANOGrav' in p.flags['pta'] and not is_wideband:
-                s2 = s + white_noise_block(vary=white_vary, inc_ecorr=True,
-                                           select=select)
-                models.append(s2(p))
+        if 'NANOGrav' in p.flags['pta'] and not is_wideband:
+            s2 = s + white_noise_block(vary=white_vary, inc_ecorr=True,
+                                       select=select)
+            models.append(s2(p))
         else:
             s3 = s + white_noise_block(vary=white_vary, inc_ecorr=False,
                                        select=select)
@@ -1250,11 +1245,10 @@ def model_2c(psrs, psd='powerlaw', noisedict=None, white_vary=False,
     # adding white-noise, and acting on psr objects
     models = []
     for p in psrs:
-        if 'pta' in p.flags.keys():
-            if 'NANOGrav' in p.flags['pta'] and not is_wideband:
-                s2 = s + white_noise_block(vary=white_vary, inc_ecorr=True,
-                                           select=select)
-                models.append(s2(p))
+        if 'NANOGrav' in p.flags['pta'] and not is_wideband:
+            s2 = s + white_noise_block(vary=white_vary, inc_ecorr=True,
+                                       select=select)
+            models.append(s2(p))
         else:
             s3 = s + white_noise_block(vary=white_vary, inc_ecorr=False,
                                        select=select)
@@ -1374,11 +1368,10 @@ def model_2d(psrs, psd='powerlaw', noisedict=None, white_vary=False,
     # adding white-noise, and acting on psr objects
     models = []
     for p in psrs:
-        if 'pta' in p.flags.keys():
-            if 'NANOGrav' in p.flags['pta'] and not is_wideband:
-                s2 = s + white_noise_block(vary=white_vary, inc_ecorr=True,
-                                           select=select)
-                models.append(s2(p))
+        if 'NANOGrav' in p.flags['pta'] and not is_wideband:
+            s2 = s + white_noise_block(vary=white_vary, inc_ecorr=True,
+                                       select=select)
+            models.append(s2(p))
         else:
             s3 = s + white_noise_block(vary=white_vary, inc_ecorr=False,
                                        select=select)
@@ -1523,11 +1516,10 @@ def model_3a(psrs, psd='powerlaw', noisedict=None, white_vary=False,
     # adding white-noise, and acting on psr objects
     models = []
     for p in psrs:
-        if 'pta' in p.flags.keys():
-            if 'NANOGrav' in p.flags['pta'] and not is_wideband:
-                s2 = s + white_noise_block(vary=white_vary, inc_ecorr=True,
-                                           select=select)
-                models.append(s2(p))
+        if 'NANOGrav' in p.flags['pta'] and not is_wideband:
+            s2 = s + white_noise_block(vary=white_vary, inc_ecorr=True,
+                                       select=select)
+            models.append(s2(p))
         else:
             s3 = s + white_noise_block(vary=white_vary, inc_ecorr=False,
                                        select=select)
@@ -1658,11 +1650,10 @@ def model_3b(psrs, psd='powerlaw', noisedict=None, white_vary=False,
     # adding white-noise, and acting on psr objects
     models = []
     for p in psrs:
-        if 'pta' in p.flags.keys():
-            if 'NANOGrav' in p.flags['pta'] and not is_wideband:
-                s2 = s + white_noise_block(vary=white_vary, inc_ecorr=True,
-                                           select=select)
-                models.append(s2(p))
+        if 'NANOGrav' in p.flags['pta'] and not is_wideband:
+            s2 = s + white_noise_block(vary=white_vary, inc_ecorr=True,
+                                       select=select)
+            models.append(s2(p))
         else:
             s3 = s + white_noise_block(vary=white_vary, inc_ecorr=False,
                                        select=select)
@@ -1798,11 +1789,10 @@ def model_3c(psrs, psd='powerlaw', noisedict=None, white_vary=False,
     # adding white-noise, and acting on psr objects
     models = []
     for p in psrs:
-        if 'pta' in p.flags.keys():
-            if 'NANOGrav' in p.flags['pta'] and not is_wideband:
-                s2 = s + white_noise_block(vary=white_vary, inc_ecorr=True,
-                                           select=select)
-                models.append(s2(p))
+        if 'NANOGrav' in p.flags['pta'] and not is_wideband:
+            s2 = s + white_noise_block(vary=white_vary, inc_ecorr=True,
+                                       select=select)
+            models.append(s2(p))
         else:
             s3 = s + white_noise_block(vary=white_vary, inc_ecorr=False,
                                        select=select)
@@ -1930,11 +1920,10 @@ def model_3d(psrs, psd='powerlaw', noisedict=None, white_vary=False,
     # adding white-noise, and acting on psr objects
     models = []
     for p in psrs:
-        if 'pta' in p.flags.keys():
-            if 'NANOGrav' in p.flags['pta'] and not is_wideband:
-                s2 = s + white_noise_block(vary=white_vary, inc_ecorr=True,
-                                           select=select)
-                models.append(s2(p))
+        if 'NANOGrav' in p.flags['pta'] and not is_wideband:
+            s2 = s + white_noise_block(vary=white_vary, inc_ecorr=True,
+                                       select=select)
+            models.append(s2(p))
         else:
             s3 = s + white_noise_block(vary=white_vary, inc_ecorr=False,
                                        select=select)
@@ -2050,10 +2039,9 @@ def model_2a_drop_be(psrs, psd='powerlaw', noisedict=None, white_vary=False,
     # adding white-noise, and acting on psr objects
     models = []
     for p in psrs:
-        if 'pta' in p.flags.keys():
-            if 'NANOGrav' in p.flags['pta'] and not is_wideband:
-                s2 = s + white_noise_block(vary=white_vary, inc_ecorr=True)
-                models.append(s2(p))
+        if 'NANOGrav' in p.flags['pta'] and not is_wideband:
+            s2 = s + white_noise_block(vary=white_vary, inc_ecorr=True)
+            models.append(s2(p))
         else:
             s3 = s + white_noise_block(vary=white_vary, inc_ecorr=False)
             models.append(s3(p))
@@ -2189,10 +2177,9 @@ def model_2a_drop_crn(psrs, psd='powerlaw', noisedict=None, white_vary=False,
     # adding white-noise, and acting on psr objects
     models = []
     for p in psrs:
-        if 'pta' in p.flags.keys():
-            if 'NANOGrav' in p.flags['pta'] and not is_wideband:
-                s2 = s + white_noise_block(vary=white_vary, inc_ecorr=True)
-                models.append(s2(p))
+        if 'NANOGrav' in p.flags['pta'] and not is_wideband:
+            s2 = s + white_noise_block(vary=white_vary, inc_ecorr=True)
+            models.append(s2(p))
         else:
             s3 = s + white_noise_block(vary=white_vary, inc_ecorr=False)
             models.append(s3(p))
@@ -2460,12 +2447,11 @@ def model_bwm(psrs, likelihood=LogLikelihood, lookupdir=None, noisedict=None, tm
     # adding white-noise, and acting on psr objects
     models = []
     for p in psrs:
-        if 'pta' in p.flags.keys():
-            if 'NANOGrav' in p.flags['pta'] and not wideband:
-                s2 = s + white_noise_block(vary=False, inc_ecorr=True)
-                if dm_var and 'J1713+0747' == p.name:
-                    s2 += dmexp
-                models.append(s2(p))
+        if 'NANOGrav' in p.flags['pta'] and not wideband:
+            s2 = s + white_noise_block(vary=False, inc_ecorr=True)
+            if dm_var and 'J1713+0747' == p.name:
+                s2 += dmexp
+            models.append(s2(p))
         else:
             s3 = s + white_noise_block(vary=False, inc_ecorr=False)
             if dm_var and 'J1713+0747' == p.name:
@@ -2593,12 +2579,11 @@ def model_bwm_sglpsr(psr, likelihood=LogLikelihood, lookupdir=None,
     # adding white-noise, and acting on psr objects
     models = []
 
-    if 'pta' in psr.flags.keys():
-        if 'NANOGrav' in psr.flags['pta'] and not wideband:
-            s2 = s + white_noise_block(vary=False, inc_ecorr=True)
-            if dm_var and 'J1713+0747' == psr.name:
-                s2 += dmexp
-            models.append(s2(psr))
+    if 'NANOGrav' in psr.flags['pta'] and not wideband:
+        s2 = s + white_noise_block(vary=False, inc_ecorr=True)
+        if dm_var and 'J1713+0747' == psr.name:
+            s2 += dmexp
+        models.append(s2(psr))
     else:
         s3 = s + white_noise_block(vary=False, inc_ecorr=False)
         if dm_var and 'J1713+0747' == psr.name:
@@ -2770,12 +2755,11 @@ def model_fdm(psrs, noisedict=None, white_vary=False, tm_svd=False,
     # adding white-noise, and acting on psr objects
     models = []
     for p in psrs:
-        if 'pta' in p.flags.keys():
-            if 'NANOGrav' in p.flags['pta'] and not wideband:
-                s2 = s + white_noise_block(vary=False, inc_ecorr=True)
-                if dm_var and 'J1713+0747' == p.name:
-                    s2 += dmexp
-                models.append(s2(p))
+        if 'NANOGrav' in p.flags['pta'] and not wideband:
+            s2 = s + white_noise_block(vary=False, inc_ecorr=True)
+            if dm_var and 'J1713+0747' == p.name:
+                s2 += dmexp
+            models.append(s2(p))
         else:
             s3 = s + white_noise_block(vary=False, inc_ecorr=False)
             if dm_var and 'J1713+0747' == p.name:
