@@ -13,9 +13,11 @@ from enterprise.signals import (gp_signals, parameter, selections, utils,
 from enterprise_extensions import deterministic as ee_deterministic
 
 from . import chromatic as chrom
+from . import dropout as drop
 from . import gp_kernels as gpk
 from . import model_orfs
 from . import model_utils
+
 
 __all__ = ['white_noise_block',
            'red_noise_block',
@@ -27,8 +29,16 @@ __all__ = ['white_noise_block',
            ]
 
 
+def channelized_backends(backend_flags):
+    """Selection function to split by channelized backend flags only. For ECORR"""
+    flagvals = np.unique(backend_flags)
+    ch_b = ['ASP', 'GASP', 'GUPPI', 'PUPPI', 'YUPPI', 'CHIME']
+    flagvals = filter(lambda x: any(map(lambda y: y in x, ch_b)), flagvals)
+    return {flagval: backend_flags == flagval for flagval in flagvals}
+
+
 def white_noise_block(vary=False, inc_ecorr=False, gp_ecorr=False,
-                      efac1=False, select='backend', name=None):
+                      efac1=False, select='backend', tnequad=False, name=None):
     """
     Returns the white noise block of the model:
 
@@ -46,6 +56,9 @@ def white_noise_block(vary=False, inc_ecorr=False, gp_ecorr=False,
         whether to use the Gaussian process model for ECORR
     :param efac1:
         use a strong prior on EFAC = Normal(mu=1, stdev=0.1)
+    :param tnequad:
+        Whether to use the TempoNest definition of EQUAD. Defaults to False to
+        follow Tempo, Tempo2 and Pint definition.
     """
 
     if select == 'backend':
@@ -53,6 +66,7 @@ def white_noise_block(vary=False, inc_ecorr=False, gp_ecorr=False,
         backend = selections.Selection(selections.by_backend)
         # define selection by nanograv backends
         backend_ng = selections.Selection(selections.nanograv_backends)
+        # backend_ch = selections.Selection(channelized_backends)
     elif isinstance(select, list):
         # define selection by list of custom backend
         selection = selections.Selection(selections.custom_backends(select))
@@ -79,10 +93,15 @@ def white_noise_block(vary=False, inc_ecorr=False, gp_ecorr=False,
             ecorr = parameter.Constant()
 
     # white noise signals
-    ef = white_signals.MeasurementNoise(efac=efac,
-                                        selection=backend, name=name)
-    eq = white_signals.EquadNoise(log10_equad=equad,
-                                  selection=backend, name=name)
+    if tnequad:
+        efeq = white_signals.MeasurementNoise(efac=efac,
+                                              selection=backend, name=name)
+        efeq += white_signals.TNEquadNoise(log10_tnequad=equad,
+                                           selection=backend, name=name)
+    else:
+        efeq = white_signals.MeasurementNoise(efac=efac, log10_t2equad=equad,
+                                              selection=backend, name=name)
+
     if inc_ecorr:
         if gp_ecorr:
             if name is None:
@@ -98,9 +117,9 @@ def white_noise_block(vary=False, inc_ecorr=False, gp_ecorr=False,
 
     # combine signals
     if inc_ecorr:
-        s = ef + eq + ec
+        s = efeq + ec
     elif not inc_ecorr:
-        s = ef + eq
+        s = efeq
 
     return s
 
@@ -108,8 +127,9 @@ def white_noise_block(vary=False, inc_ecorr=False, gp_ecorr=False,
 def red_noise_block(psd='powerlaw', prior='log-uniform', Tspan=None,
                     name='red_noise', components=30, tnfreq=False,
                     gamma_val=None, delta_val=None, coefficients=False,
-                    select=None, modes=None, wgts=None, break_flat=False,
-                    break_flat_fq=None, logmin=None, logmax=None):
+                    select=None, modes=None, wgts=None, combine=True,
+                    break_flat=False, break_flat_fq=None,
+                    logmin=None, logmax=None, dropout=False, k_threshold=0.5):
     """
     Returns red noise model:
         Red noise modeled as a power-law with 30 sampling frequencies
@@ -128,6 +148,9 @@ def red_noise_block(psd='powerlaw', prior='log-uniform', Tspan=None,
         If given, this is the fixed slope of the power-law for
         powerlaw, turnover, or tprocess red noise
     :param coefficients: include latent coefficients in GP model?
+    :param dropout: Use a dropout analysis for intrinsic red noise models.
+        Currently only supports power law option.
+    :param k_threshold: Threshold for dropout analysis.
     """
     if tnfreq and Tspan is not None:
         components = model_utils.get_tncoeff(Tspan, components)
@@ -154,7 +177,12 @@ def red_noise_block(psd='powerlaw', prior='log-uniform', Tspan=None,
             gamma = parameter.Uniform(0, 7)
 
         # different PSD function parameters
-        if psd == 'powerlaw':
+        if psd == 'powerlaw' and dropout:
+            k_drop = parameter.Uniform(0, 1)
+            pl = drop.dropout_powerlaw(log10_A=log10_A, gamma=gamma,
+                                       dropout_psr='all', k_drop=k_drop,
+                                       k_threshold=k_threshold)
+        elif psd == 'powerlaw':
             pl = utils.powerlaw(log10_A=log10_A, gamma=gamma)
         elif psd == 'broken_powerlaw':
             kappa = parameter.Uniform(0.01, 0.5)
@@ -234,23 +262,25 @@ def red_noise_block(psd='powerlaw', prior='log-uniform', Tspan=None,
         rn = gp_signals.FourierBasisGP(pl, components=components_low,
                                        Tspan=Tspan, name=name,
                                        coefficients=coefficients,
-                                       selection=selection)
+                                       combine=combine, selection=selection)
 
         rn_flat = gp_signals.FourierBasisGP(pl_flat, name=name+'_hf',
                                             modes=freqs[components_low:],
                                             coefficients=coefficients,
+                                            combine=combine,
                                             selection=selection)
         rn = rn + rn_flat
     else:
         rn = gp_signals.FourierBasisGP(pl, components=components,
-                                       Tspan=Tspan, name=name,
+                                       modes=modes, Tspan=Tspan, name=name,
                                        coefficients=coefficients,
-                                       selection=selection, modes=modes)
+                                       combine=combine, selection=selection)
 
     if select == 'band+':  # Add the common component as well
         rn = rn + gp_signals.FourierBasisGP(pl, components=components,
                                             Tspan=Tspan, name=name+'_band',
-                                            coefficients=coefficients)
+                                            coefficients=coefficients,
+                                            combine=combine)
 
     return rn
 
@@ -704,7 +734,8 @@ def chromatic_noise_block(gp_kernel='nondiag', psd='powerlaw',
 
 
 def common_red_noise_block(psd='powerlaw', prior='log-uniform',
-                           Tspan=None, components=30, tnfreq=False,
+                           Tspan=None, components=30,
+                           tnfreq=False, combine=combine,
                            log10_A_val=None, gamma_val=None,
                            delta_val=None, logmin=None, logmax=None,
                            orf=None, orf_ifreq=0, leg_lmax=5,
