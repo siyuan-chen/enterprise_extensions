@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
-from __future__ import (absolute_import, division,
-                        print_function, unicode_literals)
-import numpy as np
+
 from collections import OrderedDict
 
-from enterprise.signals import parameter
-from enterprise.signals import signal_base
-from enterprise.signals import deterministic_signals
+import numpy as np
+from enterprise.signals import deterministic_signals, parameter, signal_base
 
 # timing model delay
+
+
 @signal_base.function
 def tm_delay(residuals, t2pulsar, tmparams_orig, tmparams, which='all'):
     """
@@ -23,8 +22,10 @@ def tm_delay(residuals, t2pulsar, tmparams_orig, tmparams, which='all'):
     :return: difference between new and old residuals in seconds
     """
 
-    if which == 'all': keys = tmparams_orig.keys()
-    else: keys = which
+    if which == 'all':
+        keys = tmparams_orig.keys()
+    else:
+        keys = which
 
     # grab original timing model parameters and errors in dictionary
     orig_params = np.array([tmparams_orig[key] for key in keys])
@@ -38,16 +39,14 @@ def tm_delay(residuals, t2pulsar, tmparams_orig, tmparams, which='all'):
     t2pulsar.vals(tmparams_vary)
     new_res = np.double(t2pulsar.residuals().copy())
 
-    # remmeber to set values back to originals
+    # remember to set values back to originals
     t2pulsar.vals(OrderedDict(zip(keys,
-                                  np.atleast_1d(np.double(orig_params[:,0])))))
-
-    # Return the time-series for the pulsar
+                                  np.atleast_1d(np.double(orig_params[:, 0])))))
 
     # Sort the residuals
-    isort = np.argsort(t2pulsar.toas(),kind='mergesort')
+    isort = np.argsort(t2pulsar.toas(), kind='mergesort')
 
-    return residuals - new_res[isort]
+    return residuals[isort] - new_res[isort]
 
 # Model component building blocks #
 
