@@ -38,7 +38,8 @@ def channelized_backends(backend_flags):
 
 
 def white_noise_block(vary=False, inc_ecorr=False, gp_ecorr=False,
-                      efac1=False, select='backend', tnequad=False, name=None):
+                      efac1=False, tnequad=False, select='backend',
+                      select_ecorr='nanograv', name=None):
     """
     Returns the white noise block of the model:
 
@@ -74,9 +75,17 @@ def white_noise_block(vary=False, inc_ecorr=False, gp_ecorr=False,
         # define no selection
         selection = selections.Selection(selections.no_selection)
 
-    # define selection by nanograv backends
-    selection_ng = selections.Selection(selections.nanograv_backends)
-    # selection_ch = selections.Selection(channelized_backends)
+    # define selection by backends for ECORR
+    if select_ecorr == 'nanograv':
+        selection_ecorr = selections.Selection(selections.nanograv_backends)
+    elif select_ecorr == 'channelized':
+        selection_ecorr = selections.Selection(channelized_backends)
+    elif isinstance(select_ecorr, list):
+        selection_ecorr = selections.Selection(selections.custom_backends(select_ecorr))
+    elif isinstance(select_ecorr, dict):
+        selection_ecorr = selections.Selection(selections.custom_backends_dict(select_ecorr))
+    else:
+        selection_ecorr = selections.Selection(selections.no_selection)
 
     # white noise parameters
     if vary:
@@ -107,14 +116,14 @@ def white_noise_block(vary=False, inc_ecorr=False, gp_ecorr=False,
         if gp_ecorr:
             if name is None:
                 ec = gp_signals.EcorrBasisModel(log10_ecorr=ecorr,
-                                                selection=selection_ng)
+                                                selection=selection_ecorr)
             else:
                 ec = gp_signals.EcorrBasisModel(log10_ecorr=ecorr,
-                                                selection=selection_ng, name=name)
+                                                selection=selection_ecorr, name=name)
 
         else:
             ec = white_signals.EcorrKernelNoise(log10_ecorr=ecorr,
-                                                selection=selection_ng, name=name)
+                                                selection=selection_ecorr, name=name)
 
     # combine signals
     if inc_ecorr:
@@ -801,8 +810,10 @@ def common_red_noise_block(psd='powerlaw', prior='log-uniform',
             'param_hd': model_orfs.param_hd_orf(a=parameter.Uniform(-1.5, 3.0)('gw_orf_param0'),
                                                 b=parameter.Uniform(-1.0, 0.5)('gw_orf_param1'),
                                                 c=parameter.Uniform(-1.0, 1.0)('gw_orf_param2')),
-            'spline_orf': model_orfs.spline_orf(params=parameter.Uniform(-0.9, 0.9, size=7)('gw_orf_spline')),
-            'bin_orf': model_orfs.bin_orf(params=parameter.Uniform(-1.0, 1.0, size=7)('gw_orf_bin')),
+            'spline_orf': model_orfs.spline_orf(params=parameter.Uniform(
+                -0.9, 0.9, size=7)('gw_orf_spline')),
+            'bin_orf': model_orfs.bin_orf(params=parameter.Uniform(
+                -1.0, 1.0, size=7)('gw_orf_bin')),
             'zero_diag_hd': model_orfs.zero_diag_hd(),
             'zero_diag_bin_orf': model_orfs.zero_diag_bin_orf(params=parameter.Uniform(
                 -1.0, 1.0, size=7)('gw_orf_bin_zero_diag')),
@@ -811,7 +822,8 @@ def common_red_noise_block(psd='powerlaw', prior='log-uniform',
                 -1.0, 1.0, size=leg_lmax+1)('gw_orf_legendre')),
             'zero_diag_legendre_orf': model_orfs.zero_diag_legendre_orf(params=parameter.Uniform(
                 -1.0, 1.0, size=leg_lmax+1)('gw_orf_legendre_zero_diag')),
-            'chebyshev_orf': model_orfs.chebyshev_orf(params=parameter.Uniform(-1.0, 1.0, size=4)('gw_orf_chebyshev'))}
+            'chebyshev_orf': model_orfs.chebyshev_orf(params=parameter.Uniform(
+                -1.0, 1.0, size=4)('gw_orf_chebyshev'))}
 
     if tnfreq and Tspan is not None:
         components = model_utils.get_tncoeff(Tspan, components)
