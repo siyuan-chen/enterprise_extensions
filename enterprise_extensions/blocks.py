@@ -63,10 +63,7 @@ def white_noise_block(vary=False, inc_ecorr=False, gp_ecorr=False,
 
     if select == 'backend':
         # define selection by observing backend
-        backend = selections.Selection(selections.by_backend)
-        # define selection by nanograv backends
-        backend_ng = selections.Selection(selections.nanograv_backends)
-        # backend_ch = selections.Selection(channelized_backends)
+        selection = selections.Selection(selections.by_backend)
     elif isinstance(select, list):
         # define selection by list of custom backend
         selection = selections.Selection(selections.custom_backends(select))
@@ -75,7 +72,11 @@ def white_noise_block(vary=False, inc_ecorr=False, gp_ecorr=False,
         selection = selections.Selection(selections.custom_backends_dict(select))
     else:
         # define no selection
-        backend = selections.Selection(selections.no_selection)
+        selection = selections.Selection(selections.no_selection)
+
+    # define selection by nanograv backends
+    selection_ng = selections.Selection(selections.nanograv_backends)
+    # selection_ch = selections.Selection(channelized_backends)
 
     # white noise parameters
     if vary:
@@ -95,25 +96,25 @@ def white_noise_block(vary=False, inc_ecorr=False, gp_ecorr=False,
     # white noise signals
     if tnequad:
         efeq = white_signals.MeasurementNoise(efac=efac,
-                                              selection=backend, name=name)
+                                              selection=selection, name=name)
         efeq += white_signals.TNEquadNoise(log10_tnequad=equad,
-                                           selection=backend, name=name)
+                                           selection=selection, name=name)
     else:
         efeq = white_signals.MeasurementNoise(efac=efac, log10_t2equad=equad,
-                                              selection=backend, name=name)
+                                              selection=selection, name=name)
 
     if inc_ecorr:
         if gp_ecorr:
             if name is None:
                 ec = gp_signals.EcorrBasisModel(log10_ecorr=ecorr,
-                                                selection=backend_ng)
+                                                selection=selection_ng)
             else:
                 ec = gp_signals.EcorrBasisModel(log10_ecorr=ecorr,
-                                                selection=backend_ng, name=name)
+                                                selection=selection_ng, name=name)
 
         else:
             ec = white_signals.EcorrKernelNoise(log10_ecorr=ecorr,
-                                                selection=backend_ng, name=name)
+                                                selection=selection_ng, name=name)
 
     # combine signals
     if inc_ecorr:
