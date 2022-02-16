@@ -26,7 +26,7 @@ from enterprise_extensions.timing import timing_block
 
 def model_singlepsr_noise(psr, tm_var=False, tm_linear=False,
                           tmparam_list=None, tm_svd=False, tm_norm=True,
-                          noisedict=None, white_vary=True, tnequad=False,
+                          noisedict=None, white_var=True, tnequad=False,
                           components=30, logmin=None, logmax=None,
                           Tspan_red=None, Tspan_dm=None, red_var=True,
                           psd='powerlaw', red_select=None, red_components=30,
@@ -73,7 +73,7 @@ def model_singlepsr_noise(psr, tm_var=False, tm_linear=False,
     :param noisedict: dictionary of noise parameters
     :param tm_svd: boolean for svd-stabilised timing model design matrix
     :param tm_norm: normalize the timing model, or provide custom normalization
-    :param white_vary: boolean for varying white noise or keeping fixed
+    :param white_var: boolean for varying white noise or keeping fixed
     :param components: number of modes in Fourier domain processes
     :param dm_components: number of modes in Fourier domain DM processes
     :param upper_limit: whether to do an upper-limit analysis
@@ -168,7 +168,7 @@ def model_singlepsr_noise(psr, tm_var=False, tm_linear=False,
                 dmjump = parameter.Uniform(pmin=-0.005, pmax=0.005)
             else:
                 dmjump = parameter.Constant()
-            if white_vary:
+            if white_var:
                 dmefac = parameter.Uniform(pmin=0.1, pmax=10.0)
                 log10_dmequad = parameter.Uniform(pmin=-7.0, pmax=0.0)
                 # dmjump = parameter.Uniform(pmin=-0.005, pmax=0.005)
@@ -355,13 +355,13 @@ def model_singlepsr_noise(psr, tm_var=False, tm_linear=False,
 
     # adding white-noise, and acting on psr objects
     if ('NANOGrav' in psr.flags['pta'] or 'CHIME' in psr.flags['f']) and not is_wideband:
-        s2 = s + white_noise_block(vary=white_vary, inc_ecorr=True,
+        s2 = s + white_noise_block(vary=white_var, inc_ecorr=True,
                                    tnequad=tnequad, select=select)
         model = s2(psr)
         if psr_model:
             Model = s2
     else:
-        s3 = s + white_noise_block(vary=white_vary, inc_ecorr=False,
+        s3 = s + white_noise_block(vary=white_var, inc_ecorr=False,
                                    tnequad=tnequad, select=select)
         model = s3(psr)
         if psr_model:
@@ -377,7 +377,7 @@ def model_singlepsr_noise(psr, tm_var=False, tm_linear=False,
             pta = signal_base.PTA([model])
 
         # set white noise parameters
-        if not white_vary or (is_wideband and use_dmdata):
+        if not white_var or (is_wideband and use_dmdata):
             if noisedict is None:
                 print('No noise dictionary provided!...')
             else:
@@ -387,7 +387,7 @@ def model_singlepsr_noise(psr, tm_var=False, tm_linear=False,
         return pta
 
 
-def model_1(psrs, psd='powerlaw', noisedict=None, white_vary=False,
+def model_1(psrs, psd='powerlaw', noisedict=None, white_var=False,
             components=30, upper_limit=False, bayesephem=False, tnequad=False,
             be_type='orbel', is_wideband=False, use_dmdata=False,
             select='backend', tm_marg=False, dense_like=False, tm_svd=False):
@@ -411,7 +411,7 @@ def model_1(psrs, psd='powerlaw', noisedict=None, white_vary=False,
     :param noisedict:
         Dictionary of pulsar noise properties. Can provide manually,
         or the code will attempt to find it.
-    :param white_vary:
+    :param white_var:
         boolean for varying white noise or keeping fixed.
     :param upper_limit:
         Perform upper limit on common red noise amplitude. By default
@@ -441,7 +441,7 @@ def model_1(psrs, psd='powerlaw', noisedict=None, white_vary=False,
     # timing model
     if (is_wideband and use_dmdata):
         dmjump = parameter.Constant()
-        if white_vary:
+        if white_var:
             dmefac = parameter.Uniform(pmin=0.1, pmax=10.0)
             log10_dmequad = parameter.Uniform(pmin=-7.0, pmax=0.0)
             # dmjump = parameter.Uniform(pmin=-0.005, pmax=0.005)
@@ -474,11 +474,11 @@ def model_1(psrs, psd='powerlaw', noisedict=None, white_vary=False,
     models = []
     for p in psrs:
         if 'NANOGrav' in p.flags['pta'] and not is_wideband:
-            s2 = s + white_noise_block(vary=white_vary, inc_ecorr=True,
+            s2 = s + white_noise_block(vary=white_var, inc_ecorr=True,
                                        tnequad=tnequad, select=select)
             models.append(s2(p))
         else:
-            s3 = s + white_noise_block(vary=white_vary, inc_ecorr=False,
+            s3 = s + white_noise_block(vary=white_var, inc_ecorr=False,
                                        tnequad=tnequad, select=select)
             models.append(s3(p))
 
@@ -489,7 +489,7 @@ def model_1(psrs, psd='powerlaw', noisedict=None, white_vary=False,
         pta = signal_base.PTA(models)
 
     # set white noise parameters
-    if not white_vary or (is_wideband and use_dmdata):
+    if not white_var or (is_wideband and use_dmdata):
         if noisedict is None:
             print('No noise dictionary provided!...')
         else:
@@ -503,7 +503,7 @@ def model_2a(psrs, psd='powerlaw', noisedict=None, components=30,
              n_rnfreqs=None, n_gwbfreqs=None, gamma_common=None,
              delta_common=None, upper_limit=False, bayesephem=False,
              be_type='setIII_1980', sat_orb_elements=False,
-             white_vary=False, is_wideband=False,
+             white_var=False, is_wideband=False,
              use_dmdata=False, select='backend', tnequad=False,
              pshift=False, pseed=None, psr_models=False,
              tm_marg=False, dense_like=False, tm_svd=False):
@@ -531,7 +531,7 @@ def model_2a(psrs, psd='powerlaw', noisedict=None, components=30,
     :param noisedict:
         Dictionary of pulsar noise properties. Can provide manually,
         or the code will attempt to find it.
-    :param white_vary:
+    :param white_var:
         boolean for varying white noise or keeping fixed.
     :param gamma_common:
         Fixed common red process spectral index value. By default we
@@ -581,7 +581,7 @@ def model_2a(psrs, psd='powerlaw', noisedict=None, components=30,
     # timing model
     if (is_wideband and use_dmdata):
         dmjump = parameter.Constant()
-        if white_vary:
+        if white_var:
             dmefac = parameter.Uniform(pmin=0.1, pmax=10.0)
             log10_dmequad = parameter.Uniform(pmin=-7.0, pmax=0.0)
             # dmjump = parameter.Uniform(pmin=-0.005, pmax=0.005)
@@ -618,7 +618,7 @@ def model_2a(psrs, psd='powerlaw', noisedict=None, components=30,
     # timing model
     if (is_wideband and use_dmdata):
         dmjump = parameter.Constant()
-        if white_vary:
+        if white_var:
             dmefac = parameter.Uniform(pmin=0.1, pmax=10.0)
             log10_dmequad = parameter.Uniform(pmin=-7.0, pmax=0.0)
             #dmjump = parameter.Uniform(pmin=-0.005, pmax=0.005)
@@ -639,11 +639,11 @@ def model_2a(psrs, psd='powerlaw', noisedict=None, components=30,
     models = []
     for p in psrs:
         if 'NANOGrav' in p.flags['pta'] and not is_wideband:
-            s2 = s + white_noise_block(vary=white_vary, inc_ecorr=True,
+            s2 = s + white_noise_block(vary=white_var, inc_ecorr=True,
                                        tnequad=tnequad, select=select)
             models.append(s2(p))
         else:
-            s3 = s + white_noise_block(vary=white_vary, inc_ecorr=False,
+            s3 = s + white_noise_block(vary=white_var, inc_ecorr=False,
                                        tnequad=tnequad, select=select)
             models.append(s3(p))
 
@@ -679,7 +679,7 @@ def model_general(psrs, tm_var=False, tm_linear=False, tmparam_list=None,
                   common_components=30, red_components=30, dm_components=30,
                   modes=None, wgts=None, logfreq=False, nmodes_log=10,
                   tnfreq=False, dense_like=False, noisedict=None,
-                  white_vary=False, gequad=False, tnequad=False,
+                  white_var=False, white_global=False, tnequad=False,
                   orf='crn', orf_names=None, orf_ifreq=0, leg_lmax=5,
                   log10_A_common=None, gamma_common=None, delta_common=None,
                   common_logmin=None, common_logmax=None,
@@ -711,7 +711,7 @@ def model_general(psrs, tm_var=False, tm_linear=False, tmparam_list=None,
     :param noisedict: Dictionary of pulsar noise properties. Can provide manually,
         or the code will attempt to find it.
         [default = None]
-    :param white_vary: boolean for varying white noise or keeping fixed.
+    :param white_var: boolean for varying white noise or keeping fixed.
         [default = False]
     :param Tspan: timespan assumed for describing stochastic processes,
         in units of seconds. If None provided will find span of pulsars.
@@ -811,7 +811,8 @@ def model_general(psrs, tm_var=False, tm_linear=False, tmparam_list=None,
         [default = 'powerlaw']
     :param dmchrom_idx: spectral index of generic chromatic GP.
         [default = 4]
-    :param gequad: boolean to search for a global EQUAD.
+    :param white_global: string to search for a global white noise.
+        ['gequad', 'gefac']
         [default = False]
     :param coefficients: boolean to form full hierarchical PTA object;
         (no analytic latent-coefficient marginalization)
@@ -866,7 +867,7 @@ def model_general(psrs, tm_var=False, tm_linear=False, tmparam_list=None,
                                        coefficients=coefficients)
     elif not tm_var and use_dmdata:
         dmjump = parameter.Constant()
-        if white_vary:
+        if white_var:
             dmefac = parameter.Uniform(pmin=0.1, pmax=10.0)
             log10_dmequad = parameter.Uniform(pmin=-7.0, pmax=0.0)
             # dmjump = parameter.Uniform(pmin=-0.005, pmax=0.005)
@@ -922,25 +923,26 @@ def model_general(psrs, tm_var=False, tm_linear=False, tmparam_list=None,
                              break_flat=red_breakflat, break_flat_fq=red_breakflat_fq)
 
     # common red noise block
-    crn = []
-    if orf_names is None:
-        orf_names = orf
-    for elem, elem_name in zip(orf.split(','), orf_names.split(',')):
-        if elem == 'zero_diag_bin_orf' or elem == 'zero_diag_legendre_orf':
-            log10_A_val = log10_A_common
-        else:
-            log10_A_val = None
-        crn.append(common_red_noise_block(psd=common_psd, prior=amp_prior_common, tnfreq=tnfreq,
-                                          Tspan=Tspan_common, components=common_components,
-                                          log10_A_val=log10_A_val, gamma_val=gamma_common,
-                                          delta_val=delta_common, name='gw_{}'.format(elem_name),
-                                          orf=elem, orf_ifreq=orf_ifreq, leg_lmax=leg_lmax,
-                                          coefficients=coefficients, pshift=pshift, pseed=None,
-                                          logmin=common_logmin, logmax=common_logmax))
-        # orf_ifreq only affects freq_hd model.
-        # leg_lmax only affects (zero_diag_)legendre_orf model.
-    crn = functools.reduce((lambda x, y: x+y), crn)
-    s += crn
+    if orf is not None:
+        crn = []
+        if orf_names is None:
+            orf_names = orf
+        for elem, elem_name in zip(orf.split(','), orf_names.split(',')):
+            if elem == 'zero_diag_bin_orf' or elem == 'zero_diag_legendre_orf':
+                log10_A_val = log10_A_common
+            else:
+                log10_A_val = None
+            crn.append(common_red_noise_block(psd=common_psd, prior=amp_prior_common, tnfreq=tnfreq,
+                                              Tspan=Tspan_common, components=common_components,
+                                              log10_A_val=log10_A_val, gamma_val=gamma_common,
+                                              delta_val=delta_common, name='gw_{}'.format(elem_name),
+                                              orf=elem, orf_ifreq=orf_ifreq, leg_lmax=leg_lmax,
+                                              coefficients=coefficients, pshift=pshift, pseed=None,
+                                              logmin=common_logmin, logmax=common_logmax))
+            # orf_ifreq only affects freq_hd model.
+            # leg_lmax only affects (zero_diag_)legendre_orf model.
+        crn = functools.reduce((lambda x, y: x+y), crn)
+        s += crn
 
     # DM variations
     if dm_var:
@@ -966,13 +968,16 @@ def model_general(psrs, tm_var=False, tm_linear=False, tmparam_list=None,
     models = []
 
     for p in psrs:
+        no_select = selections.Selection(selections.no_selection)
         if 'NANOGrav' in p.flags['pta'] and not is_wideband:
-            s2 = s + white_noise_block(vary=white_vary, inc_ecorr=True,
+            s2 = s + white_noise_block(vary=white_var, inc_ecorr=True,
                                        tnequad=tnequad, select=select)
-            if gequad:
-                s2 += white_signals.EquadNoise(log10_equad=parameter.Uniform(-9, -5),
-                                               selection=selections.Selection(selections.no_selection),
-                                               name='gequad')
+            if white_global == 'gequad':
+                s2 += white_signals.TNEquadNoise(log10_equad=parameter.Uniform(-9, -5),
+                                                 selection=no_select, name=white_global)
+            if white_global == 'gefac':
+                s2 += white_signals.MeasurementNoise(efac=parameter.Uniform(0.1, 5.0),
+                                                     selection=no_select, name=white_global)
             if '1713' in p.name and dm_var:
                 tmin = p.toas.min() / const.day
                 tmax = p.toas.max() / const.day
@@ -984,12 +989,14 @@ def model_general(psrs, tm_var=False, tm_linear=False, tmparam_list=None,
             else:
                 models.append(s2(p))
         else:
-            s4 = s + white_noise_block(vary=white_vary, inc_ecorr=False,
+            s4 = s + white_noise_block(vary=white_var, inc_ecorr=False,
                                        tnequad=tnequad, select=select)
-            if gequad:
+            if white_global == 'gequad':
                 s4 += white_signals.TNEquadNoise(log10_tnequad=parameter.Uniform(-9, -5),
-                                                 selection=selections.Selection(selections.no_selection),
-                                                 name='gequad')
+                                                 selection=no_select, name=white_global)
+            if white_global == 'gefac':
+                s4 += white_signals.MeasurementNoise(efac=parameter.Uniform(0.1, 5.0),
+                                                     selection=no_select, name=white_global)
             if '1713' in p.name and dm_var:
                 tmin = p.toas.min() / const.day
                 tmax = p.toas.max() / const.day
@@ -1008,7 +1015,7 @@ def model_general(psrs, tm_var=False, tm_linear=False, tmparam_list=None,
         pta = signal_base.PTA(models)
 
     # set white noise parameters
-    if not white_vary or (is_wideband and use_dmdata):
+    if not white_var or (is_wideband and use_dmdata):
         if noisedict is None:
             print('No noise dictionary provided!...')
         else:
@@ -1018,7 +1025,7 @@ def model_general(psrs, tm_var=False, tm_linear=False, tmparam_list=None,
     return pta
 
 
-def model_2b(psrs, psd='powerlaw', noisedict=None, white_vary=False,
+def model_2b(psrs, psd='powerlaw', noisedict=None, white_var=False,
              bayesephem=False, be_type='orbel', is_wideband=False, components=30,
              use_dmdata=False, select='backend', pshift=False, tnequad=False,
              tm_marg=False, dense_like=False, tm_svd=False, upper_limit=False,
@@ -1047,7 +1054,7 @@ def model_2b(psrs, psd='powerlaw', noisedict=None, white_vary=False,
     :param noisedict:
         Dictionary of pulsar noise properties. Can provide manually,
         or the code will attempt to find it.
-    :param white_vary:
+    :param white_var:
         boolean for varying white noise or keeping fixed.
     :param gamma_common:
         Fixed common red process spectral index value. By default we
@@ -1080,7 +1087,7 @@ def model_2b(psrs, psd='powerlaw', noisedict=None, white_vary=False,
     # timing model
     if (is_wideband and use_dmdata):
         dmjump = parameter.Constant()
-        if white_vary:
+        if white_var:
             dmefac = parameter.Uniform(pmin=0.1, pmax=10.0)
             log10_dmequad = parameter.Uniform(pmin=-7.0, pmax=0.0)
             # dmjump = parameter.Uniform(pmin=-0.005, pmax=0.005)
@@ -1117,11 +1124,11 @@ def model_2b(psrs, psd='powerlaw', noisedict=None, white_vary=False,
     models = []
     for p in psrs:
         if 'NANOGrav' in p.flags['pta'] and not is_wideband:
-            s2 = s + white_noise_block(vary=white_vary, inc_ecorr=True,
+            s2 = s + white_noise_block(vary=white_var, inc_ecorr=True,
                                        tnequad=tnequad, select=select)
             models.append(s2(p))
         else:
-            s3 = s + white_noise_block(vary=white_vary, inc_ecorr=False,
+            s3 = s + white_noise_block(vary=white_var, inc_ecorr=False,
                                        tnequad=tnequad, select=select)
             models.append(s3(p))
 
@@ -1132,7 +1139,7 @@ def model_2b(psrs, psd='powerlaw', noisedict=None, white_vary=False,
         pta = signal_base.PTA(models)
     # set white noise parameters
 
-    if not white_vary or (is_wideband and use_dmdata):
+    if not white_var or (is_wideband and use_dmdata):
         if noisedict is None:
             print('No noise dictionary provided!...')
         else:
@@ -1142,7 +1149,7 @@ def model_2b(psrs, psd='powerlaw', noisedict=None, white_vary=False,
     return pta
 
 
-def model_2c(psrs, psd='powerlaw', noisedict=None, white_vary=False,
+def model_2c(psrs, psd='powerlaw', noisedict=None, white_var=False,
              components=30, gamma_common=None, upper_limit=False, tnequad=False,
              bayesephem=False, be_type='orbel', is_wideband=False,
              use_dmdata=False, select='backend', tm_marg=False,
@@ -1176,7 +1183,7 @@ def model_2c(psrs, psd='powerlaw', noisedict=None, white_vary=False,
     :param noisedict:
         Dictionary of pulsar noise properties. Can provide manually,
         or the code will attempt to find it.
-    :param white_vary:
+    :param white_var:
         boolean for varying white noise or keeping fixed.
     :param gamma_common:
         Fixed common red process spectral index value. By default we
@@ -1209,7 +1216,7 @@ def model_2c(psrs, psd='powerlaw', noisedict=None, white_vary=False,
     # timing model
     if (is_wideband and use_dmdata):
         dmjump = parameter.Constant()
-        if white_vary:
+        if white_var:
             dmefac = parameter.Uniform(pmin=0.1, pmax=10.0)
             log10_dmequad = parameter.Uniform(pmin=-7.0, pmax=0.0)
             # dmjump = parameter.Uniform(pmin=-0.005, pmax=0.005)
@@ -1251,11 +1258,11 @@ def model_2c(psrs, psd='powerlaw', noisedict=None, white_vary=False,
     models = []
     for p in psrs:
         if 'NANOGrav' in p.flags['pta'] and not is_wideband:
-            s2 = s + white_noise_block(vary=white_vary, inc_ecorr=True,
+            s2 = s + white_noise_block(vary=white_var, inc_ecorr=True,
                                        tnequad=tnequad, select=select)
             models.append(s2(p))
         else:
-            s3 = s + white_noise_block(vary=white_vary, inc_ecorr=False,
+            s3 = s + white_noise_block(vary=white_var, inc_ecorr=False,
                                        tnequad=tnequad, select=select)
             models.append(s3(p))
 
@@ -1266,7 +1273,7 @@ def model_2c(psrs, psd='powerlaw', noisedict=None, white_vary=False,
         pta = signal_base.PTA(models)
 
     # set white noise parameters
-    if not white_vary or (is_wideband and use_dmdata):
+    if not white_var or (is_wideband and use_dmdata):
         if noisedict is None:
             print('No noise dictionary provided!...')
         else:
@@ -1276,7 +1283,7 @@ def model_2c(psrs, psd='powerlaw', noisedict=None, white_vary=False,
     return pta
 
 
-def model_2d(psrs, psd='powerlaw', noisedict=None, white_vary=False,
+def model_2d(psrs, psd='powerlaw', noisedict=None, white_var=False,
              components=30, gamma_common=None, upper_limit=False, tnequad=False,
              bayesephem=False, be_type='orbel', is_wideband=False,
              use_dmdata=False, select='backend', pshift=False,
@@ -1305,7 +1312,7 @@ def model_2d(psrs, psd='powerlaw', noisedict=None, white_vary=False,
     :param noisedict:
         Dictionary of pulsar noise properties. Can provide manually,
         or the code will attempt to find it.
-    :param white_vary:
+    :param white_var:
         boolean for varying white noise or keeping fixed.
     :param gamma_common:
         Fixed common red process spectral index value. By default we
@@ -1338,7 +1345,7 @@ def model_2d(psrs, psd='powerlaw', noisedict=None, white_vary=False,
     # timing model
     if (is_wideband and use_dmdata):
         dmjump = parameter.Constant()
-        if white_vary:
+        if white_var:
             dmefac = parameter.Uniform(pmin=0.1, pmax=10.0)
             log10_dmequad = parameter.Uniform(pmin=-7.0, pmax=0.0)
             # dmjump = parameter.Uniform(pmin=-0.005, pmax=0.005)
@@ -1375,11 +1382,11 @@ def model_2d(psrs, psd='powerlaw', noisedict=None, white_vary=False,
     models = []
     for p in psrs:
         if 'NANOGrav' in p.flags['pta'] and not is_wideband:
-            s2 = s + white_noise_block(vary=white_vary, inc_ecorr=True,
+            s2 = s + white_noise_block(vary=white_var, inc_ecorr=True,
                                        tnequad=tnequad, select=select)
             models.append(s2(p))
         else:
-            s3 = s + white_noise_block(vary=white_vary, inc_ecorr=False,
+            s3 = s + white_noise_block(vary=white_var, inc_ecorr=False,
                                        tnequad=tnequad, select=select)
             models.append(s3(p))
 
@@ -1390,7 +1397,7 @@ def model_2d(psrs, psd='powerlaw', noisedict=None, white_vary=False,
         pta = signal_base.PTA(models)
 
     # set white noise parameters
-    if not white_vary or (is_wideband and use_dmdata):
+    if not white_var or (is_wideband and use_dmdata):
         if noisedict is None:
             print('No noise dictionary provided!...')
         else:
@@ -1400,7 +1407,7 @@ def model_2d(psrs, psd='powerlaw', noisedict=None, white_vary=False,
     return pta
 
 
-def model_3a(psrs, psd='powerlaw', noisedict=None, white_vary=False,
+def model_3a(psrs, psd='powerlaw', noisedict=None, white_var=False,
              components=30, n_rnfreqs=None, n_gwbfreqs=None,
              gamma_common=None, delta_common=None, upper_limit=False,
              bayesephem=False, be_type='setIII_1980', sat_orb_elements=False,
@@ -1432,7 +1439,7 @@ def model_3a(psrs, psd='powerlaw', noisedict=None, white_vary=False,
     :param noisedict:
         Dictionary of pulsar noise properties. Can provide manually,
         or the code will attempt to find it.
-    :param white_vary:
+    :param white_var:
         boolean for varying white noise or keeping fixed.
     :param gamma_common:
         Fixed common red process spectral index value. By default we
@@ -1485,7 +1492,7 @@ def model_3a(psrs, psd='powerlaw', noisedict=None, white_vary=False,
     # timing model
     if (is_wideband and use_dmdata):
         dmjump = parameter.Constant()
-        if white_vary:
+        if white_var:
             dmefac = parameter.Uniform(pmin=0.1, pmax=10.0)
             log10_dmequad = parameter.Uniform(pmin=-7.0, pmax=0.0)
             # dmjump = parameter.Uniform(pmin=-0.005, pmax=0.005)
@@ -1525,11 +1532,11 @@ def model_3a(psrs, psd='powerlaw', noisedict=None, white_vary=False,
     models = []
     for p in psrs:
         if 'NANOGrav' in p.flags['pta'] and not is_wideband:
-            s2 = s + white_noise_block(vary=white_vary, inc_ecorr=True,
+            s2 = s + white_noise_block(vary=white_var, inc_ecorr=True,
                                        tnequad=tnequad, select=select)
             models.append(s2(p))
         else:
-            s3 = s + white_noise_block(vary=white_vary, inc_ecorr=False,
+            s3 = s + white_noise_block(vary=white_var, inc_ecorr=False,
                                        tnequad=tnequad, select=select)
             models.append(s3(p))
 
@@ -1543,7 +1550,7 @@ def model_3a(psrs, psd='powerlaw', noisedict=None, white_vary=False,
             pta = signal_base.PTA(models)
 
         # set white noise parameters
-        if not white_vary or (is_wideband and use_dmdata):
+        if not white_var or (is_wideband and use_dmdata):
             if noisedict is None:
                 print('No noise dictionary provided!...')
             else:
@@ -1553,7 +1560,7 @@ def model_3a(psrs, psd='powerlaw', noisedict=None, white_vary=False,
         return pta
 
 
-def model_3b(psrs, psd='powerlaw', noisedict=None, white_vary=False,
+def model_3b(psrs, psd='powerlaw', noisedict=None, white_var=False,
              components=30, gamma_common=None, upper_limit=False, tnequad=False,
              bayesephem=False, be_type='setIII', is_wideband=False,
              use_dmdata=False, select='backend', tm_marg=False,
@@ -1585,7 +1592,7 @@ def model_3b(psrs, psd='powerlaw', noisedict=None, white_vary=False,
     :param noisedict:
         Dictionary of pulsar noise properties. Can provide manually,
         or the code will attempt to find it.
-    :param white_vary:
+    :param white_var:
         boolean for varying white noise or keeping fixed.
     :param gamma_common:
         Fixed common red process spectral index value. By default we
@@ -1618,7 +1625,7 @@ def model_3b(psrs, psd='powerlaw', noisedict=None, white_vary=False,
     # timing model
     if (is_wideband and use_dmdata):
         dmjump = parameter.Constant()
-        if white_vary:
+        if white_var:
             dmefac = parameter.Uniform(pmin=0.1, pmax=10.0)
             log10_dmequad = parameter.Uniform(pmin=-7.0, pmax=0.0)
             # dmjump = parameter.Uniform(pmin=-0.005, pmax=0.005)
@@ -1660,11 +1667,11 @@ def model_3b(psrs, psd='powerlaw', noisedict=None, white_vary=False,
     models = []
     for p in psrs:
         if 'NANOGrav' in p.flags['pta'] and not is_wideband:
-            s2 = s + white_noise_block(vary=white_vary, inc_ecorr=True,
+            s2 = s + white_noise_block(vary=white_var, inc_ecorr=True,
                                        tnequad=tnequad, select=select)
             models.append(s2(p))
         else:
-            s3 = s + white_noise_block(vary=white_vary, inc_ecorr=False,
+            s3 = s + white_noise_block(vary=white_var, inc_ecorr=False,
                                        tnequad=tnequad, select=select)
             models.append(s3(p))
 
@@ -1675,7 +1682,7 @@ def model_3b(psrs, psd='powerlaw', noisedict=None, white_vary=False,
         pta = signal_base.PTA(models)
 
     # set white noise parameters
-    if not white_vary or (is_wideband and use_dmdata):
+    if not white_var or (is_wideband and use_dmdata):
         if noisedict is None:
             print('No noise dictionary provided!...')
         else:
@@ -1685,7 +1692,7 @@ def model_3b(psrs, psd='powerlaw', noisedict=None, white_vary=False,
     return pta
 
 
-def model_3c(psrs, psd='powerlaw', noisedict=None, white_vary=False,
+def model_3c(psrs, psd='powerlaw', noisedict=None, white_var=False,
              components=30, gamma_common=None, upper_limit=False, tnequad=False,
              bayesephem=False, be_type='orbel', is_wideband=False,
              use_dmdata=False, select='backend', tm_marg=False,
@@ -1720,7 +1727,7 @@ def model_3c(psrs, psd='powerlaw', noisedict=None, white_vary=False,
     :param noisedict:
         Dictionary of pulsar noise properties. Can provide manually,
         or the code will attempt to find it.
-    :param white_vary:
+    :param white_var:
         boolean for varying white noise or keeping fixed.
     :param gamma_common:
         Fixed common red process spectral index value. By default we
@@ -1753,7 +1760,7 @@ def model_3c(psrs, psd='powerlaw', noisedict=None, white_vary=False,
     # timing model
     if is_wideband and use_dmdata:
         dmjump = parameter.Constant()
-        if white_vary:
+        if white_var:
             dmefac = parameter.Uniform(pmin=0.1, pmax=10.0)
             log10_dmequad = parameter.Uniform(pmin=-7.0, pmax=0.0)
             # dmjump = parameter.Uniform(pmin=-0.005, pmax=0.005)
@@ -1800,11 +1807,11 @@ def model_3c(psrs, psd='powerlaw', noisedict=None, white_vary=False,
     models = []
     for p in psrs:
         if 'NANOGrav' in p.flags['pta'] and not is_wideband:
-            s2 = s + white_noise_block(vary=white_vary, inc_ecorr=True,
+            s2 = s + white_noise_block(vary=white_var, inc_ecorr=True,
                                        tnequad=tnequad, select=select)
             models.append(s2(p))
         else:
-            s3 = s + white_noise_block(vary=white_vary, inc_ecorr=False,
+            s3 = s + white_noise_block(vary=white_var, inc_ecorr=False,
                                        tnequad=tnequad, select=select)
             models.append(s3(p))
 
@@ -1815,7 +1822,7 @@ def model_3c(psrs, psd='powerlaw', noisedict=None, white_vary=False,
         pta = signal_base.PTA(models)
 
     # set white noise parameters
-    if not white_vary or (is_wideband and use_dmdata):
+    if not white_var or (is_wideband and use_dmdata):
         if noisedict is None:
             print('No noise dictionary provided!...')
         else:
@@ -1825,7 +1832,7 @@ def model_3c(psrs, psd='powerlaw', noisedict=None, white_vary=False,
     return pta
 
 
-def model_3d(psrs, psd='powerlaw', noisedict=None, white_vary=False,
+def model_3d(psrs, psd='powerlaw', noisedict=None, white_var=False,
              components=30, gamma_common=None, upper_limit=False, tnequad=False,
              bayesephem=False, be_type='orbel', is_wideband=False,
              use_dmdata=False, select='backend', tm_marg=False,
@@ -1857,7 +1864,7 @@ def model_3d(psrs, psd='powerlaw', noisedict=None, white_vary=False,
     :param noisedict:
         Dictionary of pulsar noise properties. Can provide manually,
         or the code will attempt to find it.
-    :param white_vary:
+    :param white_var:
         boolean for varying white noise or keeping fixed.
     :param gamma_common:
         Fixed common red process spectral index value. By default we
@@ -1890,7 +1897,7 @@ def model_3d(psrs, psd='powerlaw', noisedict=None, white_vary=False,
     # timing model
     if (is_wideband and use_dmdata):
         dmjump = parameter.Constant()
-        if white_vary:
+        if white_var:
             dmefac = parameter.Uniform(pmin=0.1, pmax=10.0)
             log10_dmequad = parameter.Uniform(pmin=-7.0, pmax=0.0)
             # dmjump = parameter.Uniform(pmin=-0.005, pmax=0.005)
@@ -1932,11 +1939,11 @@ def model_3d(psrs, psd='powerlaw', noisedict=None, white_vary=False,
     models = []
     for p in psrs:
         if 'NANOGrav' in p.flags['pta'] and not is_wideband:
-            s2 = s + white_noise_block(vary=white_vary, inc_ecorr=True,
+            s2 = s + white_noise_block(vary=white_var, inc_ecorr=True,
                                        tnequad=tnequad, select=select)
             models.append(s2(p))
         else:
-            s3 = s + white_noise_block(vary=white_vary, inc_ecorr=False,
+            s3 = s + white_noise_block(vary=white_var, inc_ecorr=False,
                                        tnequad=tnequad, select=select)
             models.append(s3(p))
 
@@ -1947,7 +1954,7 @@ def model_3d(psrs, psd='powerlaw', noisedict=None, white_vary=False,
         pta = signal_base.PTA(models)
 
     # set white noise parameters
-    if not white_vary or (is_wideband and use_dmdata):
+    if not white_var or (is_wideband and use_dmdata):
         if noisedict is None:
             print('No noise dictionary provided!...')
         else:
@@ -1957,7 +1964,7 @@ def model_3d(psrs, psd='powerlaw', noisedict=None, white_vary=False,
     return pta
 
 
-def model_2a_drop_be(psrs, psd='powerlaw', noisedict=None, white_vary=False,
+def model_2a_drop_be(psrs, psd='powerlaw', noisedict=None, white_var=False,
                      components=30, gamma_common=None, upper_limit=False,
                      is_wideband=False, use_dmdata=False, k_threshold=0.5,
                      pshift=False, tm_marg=False, dense_like=False, tm_svd=False,
@@ -1986,7 +1993,7 @@ def model_2a_drop_be(psrs, psd='powerlaw', noisedict=None, white_vary=False,
     :param noisedict:
         Dictionary of pulsar noise properties. Can provide manually,
         or the code will attempt to find it.
-    :param white_vary:
+    :param white_var:
         boolean for varying white noise or keeping fixed.
     :param gamma_common:
         Fixed common red process spectral index value. By default we
@@ -2017,7 +2024,7 @@ def model_2a_drop_be(psrs, psd='powerlaw', noisedict=None, white_vary=False,
     # timing model
     if (is_wideband and use_dmdata):
         dmjump = parameter.Constant()
-        if white_vary:
+        if white_var:
             dmefac = parameter.Uniform(pmin=0.1, pmax=10.0)
             log10_dmequad = parameter.Uniform(pmin=-7.0, pmax=0.0)
             # dmjump = parameter.Uniform(pmin=-0.005, pmax=0.005)
@@ -2053,10 +2060,10 @@ def model_2a_drop_be(psrs, psd='powerlaw', noisedict=None, white_vary=False,
     models = []
     for p in psrs:
         if 'NANOGrav' in p.flags['pta'] and not is_wideband:
-            s2 = s + white_noise_block(vary=white_vary, inc_ecorr=True, tnequad=tnequad)
+            s2 = s + white_noise_block(vary=white_var, inc_ecorr=True, tnequad=tnequad)
             models.append(s2(p))
         else:
-            s3 = s + white_noise_block(vary=white_vary, inc_ecorr=False, tnequad=tnequad)
+            s3 = s + white_noise_block(vary=white_var, inc_ecorr=False, tnequad=tnequad)
             models.append(s3(p))
 
     # set up PTA
@@ -2066,7 +2073,7 @@ def model_2a_drop_be(psrs, psd='powerlaw', noisedict=None, white_vary=False,
         pta = signal_base.PTA(models)
 
     # set white noise parameters
-    if not white_vary or (is_wideband and use_dmdata):
+    if not white_var or (is_wideband and use_dmdata):
         if noisedict is None:
             print('No noise dictionary provided!...')
         else:
@@ -2076,7 +2083,7 @@ def model_2a_drop_be(psrs, psd='powerlaw', noisedict=None, white_vary=False,
     return pta
 
 
-def model_2a_drop_crn(psrs, psd='powerlaw', noisedict=None, white_vary=False,
+def model_2a_drop_crn(psrs, psd='powerlaw', noisedict=None, white_var=False,
                       components=30, gamma_common=None, upper_limit=False,
                       bayesephem=False, is_wideband=False, use_dmdata=False,
                       k_threshold=0.5, pshift=False, tm_marg=False,
@@ -2105,7 +2112,7 @@ def model_2a_drop_crn(psrs, psd='powerlaw', noisedict=None, white_vary=False,
     :param noisedict:
         Dictionary of pulsar noise properties. Can provide manually,
         or the code will attempt to find it.
-    :param white_vary:
+    :param white_var:
         boolean for varying white noise or keeping fixed.
     :param gamma_common:
         Fixed common red process spectral index value. By default we
@@ -2136,7 +2143,7 @@ def model_2a_drop_crn(psrs, psd='powerlaw', noisedict=None, white_vary=False,
     # timing model
     if (is_wideband and use_dmdata):
         dmjump = parameter.Constant()
-        if white_vary:
+        if white_var:
             dmefac = parameter.Uniform(pmin=0.1, pmax=10.0)
             log10_dmequad = parameter.Uniform(pmin=-7.0, pmax=0.0)
             # dmjump = parameter.Uniform(pmin=-0.005, pmax=0.005)
@@ -2192,10 +2199,10 @@ def model_2a_drop_crn(psrs, psd='powerlaw', noisedict=None, white_vary=False,
     models = []
     for p in psrs:
         if 'NANOGrav' in p.flags['pta'] and not is_wideband:
-            s2 = s + white_noise_block(vary=white_vary, inc_ecorr=True, tnequad=tnequad)
+            s2 = s + white_noise_block(vary=white_var, inc_ecorr=True, tnequad=tnequad)
             models.append(s2(p))
         else:
-            s3 = s + white_noise_block(vary=white_vary, inc_ecorr=False, tnequad=tnequad)
+            s3 = s + white_noise_block(vary=white_var, inc_ecorr=False, tnequad=tnequad)
             models.append(s3(p))
 
     # set up PTA
@@ -2205,7 +2212,7 @@ def model_2a_drop_crn(psrs, psd='powerlaw', noisedict=None, white_vary=False,
         pta = signal_base.PTA(models)
 
     # set white noise parameters
-    if not white_vary or (is_wideband and use_dmdata):
+    if not white_var or (is_wideband and use_dmdata):
         if noisedict is None:
             print('No noise dictionary provided!...')
         else:
@@ -2216,7 +2223,7 @@ def model_2a_drop_crn(psrs, psd='powerlaw', noisedict=None, white_vary=False,
 
 
 # Does not yet work with IPTA datasets due to white-noise modeling issues.
-def model_chromatic(psrs, psd='powerlaw', noisedict=None, white_vary=False,
+def model_chromatic(psrs, psd='powerlaw', noisedict=None, white_var=False,
                     components=30, gamma_common=None, upper_limit=False,
                     bayesephem=False, is_wideband=False, use_dmdata=False,
                     pshift=False, idx=4, chromatic_psd='powerlaw',
@@ -2248,7 +2255,7 @@ def model_chromatic(psrs, psd='powerlaw', noisedict=None, white_vary=False,
     :param noisedict:
         Dictionary of pulsar noise properties. Can provide manually,
         or the code will attempt to find it.
-    :param white_vary:
+    :param white_var:
         boolean for varying white noise or keeping fixed.
     :param gamma_common:
         Fixed common red process spectral index value. By default we
@@ -2288,7 +2295,7 @@ def model_chromatic(psrs, psd='powerlaw', noisedict=None, white_vary=False,
     # timing model
     if (is_wideband and use_dmdata):
         dmjump = parameter.Constant()
-        if white_vary:
+        if white_var:
             dmefac = parameter.Uniform(pmin=0.1, pmax=10.0)
             log10_dmequad = parameter.Uniform(pmin=-7.0, pmax=0.0)
             # dmjump = parameter.Uniform(pmin=-0.005, pmax=0.005)
@@ -2309,7 +2316,7 @@ def model_chromatic(psrs, psd='powerlaw', noisedict=None, white_vary=False,
             s = gp_signals.TimingModel(use_svd=tm_svd)
 
     # white noise
-    s += white_noise_block(vary=white_vary, inc_ecorr=not is_wideband,
+    s += white_noise_block(vary=white_var, inc_ecorr=not is_wideband,
                            tnequad=tnequad)
 
     # red noise
@@ -2346,7 +2353,7 @@ def model_chromatic(psrs, psd='powerlaw', noisedict=None, white_vary=False,
         pta = signal_base.PTA(models)
 
     # set white noise parameters
-    if not white_vary or (is_wideband and use_dmdata):
+    if not white_var or (is_wideband and use_dmdata):
         if noisedict is None:
             print('No noise dictionary provided!...')
         else:
@@ -2624,7 +2631,7 @@ def model_bwm_sglpsr(psr, likelihood=LogLikelihood, lookupdir=None,
     return pta
 
 
-def model_fdm(psrs, noisedict=None, white_vary=False, tm_svd=False,
+def model_fdm(psrs, noisedict=None, white_var=False, tm_svd=False,
               Tmin_fdm=None, Tmax_fdm=None, gw_psd='powerlaw',
               red_psd='powerlaw', components=30, n_rnfreqs=None,
               n_gwbfreqs=None, gamma_common=None, delta_common=None,
@@ -2656,7 +2663,7 @@ def model_fdm(psrs, noisedict=None, white_vary=False, tm_svd=False,
     :param noisedict:
         Dictionary of pulsar noise properties for fixed white noise.
         Can provide manually, or the code will attempt to find it.
-    :param white_vary:
+    :param white_var:
         boolean for varying white noise or keeping fixed.
     :param tm_svd:
         boolean for svd-stabilised timing model design matrix
@@ -2800,7 +2807,7 @@ def model_fdm(psrs, noisedict=None, white_vary=False, tm_svd=False,
 
 
 def model_cw(psrs, upper_limit=False, rn_psd='powerlaw', noisedict=None,
-             white_vary=False, components=30, bayesephem=False, skyloc=None,
+             white_var=False, components=30, bayesephem=False, skyloc=None,
              log10_F=None, ecc=False, psrTerm=False, is_wideband=False,
              use_dmdata=False, gp_ecorr='basis_ecorr', tnequad=False,
              tm_marg=False, dense_like=False, tm_svd=False):
@@ -2828,7 +2835,7 @@ def model_cw(psrs, upper_limit=False, rn_psd='powerlaw', noisedict=None,
     :param noisedict:
         Dictionary of pulsar noise properties. Can provide manually,
         or the code will attempt to find it.
-    :param white_vary:
+    :param white_var:
         boolean for varying white noise or keeping fixed.
     :param bayesephem:
         Include BayesEphem model. Set to False by default
@@ -2865,7 +2872,7 @@ def model_cw(psrs, upper_limit=False, rn_psd='powerlaw', noisedict=None,
     # timing model
     if (is_wideband and use_dmdata):
         dmjump = parameter.Constant()
-        if white_vary:
+        if white_var:
             dmefac = parameter.Uniform(pmin=0.1, pmax=10.0)
             log10_dmequad = parameter.Uniform(pmin=-7.0, pmax=0.0)
             # dmjump = parameter.Uniform(pmin=-0.005, pmax=0.005)
@@ -2913,14 +2920,14 @@ def model_cw(psrs, upper_limit=False, rn_psd='powerlaw', noisedict=None,
     for p in psrs:
         if 'NANOGrav' in p.flags['pta'] and not is_wideband:
             if gp_ecorr:
-                s2 = s + white_noise_block(vary=white_vary, inc_ecorr=True,
+                s2 = s + white_noise_block(vary=white_var, inc_ecorr=True,
                                            gp_ecorr=True, name=gp_ecorr,
                                            tnequad=tnequad)
             else:
-                s2 = s + white_noise_block(vary=white_vary, inc_ecorr=True, tnequad=tnequad)
+                s2 = s + white_noise_block(vary=white_var, inc_ecorr=True, tnequad=tnequad)
             models.append(s2(p))
         else:
-            s3 = s + white_noise_block(vary=white_vary, inc_ecorr=False, tnequad=tnequad)
+            s3 = s + white_noise_block(vary=white_var, inc_ecorr=False, tnequad=tnequad)
             models.append(s3(p))
 
     # set up PTA
@@ -2930,7 +2937,7 @@ def model_cw(psrs, upper_limit=False, rn_psd='powerlaw', noisedict=None,
         pta = signal_base.PTA(models)
 
     # set white noise parameters
-    if not white_vary or (is_wideband and use_dmdata):
+    if not white_var or (is_wideband and use_dmdata):
         if noisedict is None:
             print('No noise dictionary provided!...')
         else:
