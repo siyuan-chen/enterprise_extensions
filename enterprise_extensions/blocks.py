@@ -376,9 +376,9 @@ def bwm_sglpsr_block(Tmin, Tmax, amp_prior='log-uniform',
 
 def dm_noise_block(gp_kernel='diag', psd='powerlaw', nondiag_kernel='periodic',
                    prior='log-uniform', name='dm', dt=15, df=200, Tspan=None,
-                   components=30, tnfreq=False, select=None, gamma_val=None,
-                   delta_val=None, coefficients=False, tndm=False,
-                   logmin=None, logmax=None):
+                   components=30, tnfreq=False, select=None, modes=None,
+                   gamma_val=None, delta_val=None, coefficients=False,
+                   tndm=False, logmin=None, logmax=None):
     """
     Returns DM noise model:
 
@@ -484,10 +484,12 @@ def dm_noise_block(gp_kernel='diag', psd='powerlaw', nondiag_kernel='periodic',
 
         if tndm:
             dm_basis = utils.createfourierdesignmatrix_dm_tn(nmodes=components,
-                                                             Tspan=Tspan)
+                                                             Tspan=Tspan,
+                                                             modes=modes)
         else:
             dm_basis = utils.createfourierdesignmatrix_dm(nmodes=components,
-                                                          Tspan=Tspan)
+                                                          Tspan=Tspan,
+                                                          modes=modes)
 
     elif gp_kernel == 'nondiag':
         if nondiag_kernel == 'periodic':
@@ -563,7 +565,7 @@ def chromatic_noise_block(gp_kernel='nondiag', psd='powerlaw',
                           include_quadratic=False, idx=4,
                           dt=15, df=200, Tspan=None,
                           components=30, tnfreq=False,
-                          select=None, gamma_val=None,
+                          select=None, modes=None, gamma_val=None,
                           delta_val=None, coefficients=False,
                           tndm=False, logmin=None, logmax=None):
     """
@@ -607,10 +609,12 @@ def chromatic_noise_block(gp_kernel='nondiag', psd='powerlaw',
     if gp_kernel=='diag':
         if tndm:
             chm_basis = gpb.createfourierdesignmatrix_dm_tn(nmodes=components,
-                                                            Tspan=Tspan,idx=idx)
+                                                            Tspan=Tspan,idx=idx,
+                                                            modes=modes)
         else:
             chm_basis = gpb.createfourierdesignmatrix_chromatic(nmodes=components,
-                                                                Tspan=Tspan,idx=idx)
+                                                                Tspan=Tspan,idx=idx,
+                                                                modes=modes)
         if psd in ['powerlaw', 'turnover', 'broken_powerlaw', 'flat_powerlaw']:
             if logmin is not None and logmax is not None:
                 if prior == 'uniform':
@@ -750,7 +754,7 @@ def common_red_noise_block(psd='powerlaw', prior='log-uniform',
                            delta_val=None, logmin=None, logmax=None,
                            orf=None, orf_ifreq=0, leg_lmax=5,
                            name='gw', coefficients=False, select=None,
-                           pshift=False, pseed=None):
+                           modes=None, pshift=False, pseed=None):
     """
     Returns common red noise model:
 
@@ -940,25 +944,27 @@ def common_red_noise_block(psd='powerlaw', prior='log-uniform',
     if orf is None:
         crn = gp_signals.FourierBasisGP(cpl, coefficients=coefficients,
                                         components=components, Tspan=Tspan,
-                                        name=name, selection=selection,
+                                        modes=modes, name=name,
+                                        selection=selection,
                                         pshift=pshift, pseed=pseed)
     elif orf in orfs.keys():
         if orf == 'crn':
             crn = gp_signals.FourierBasisGP(cpl, coefficients=coefficients,
                                             components=components, Tspan=Tspan,
-                                            name=name, pshift=pshift, pseed=pseed)
+                                            modes=modes, name=name,
+                                            pshift=pshift, pseed=pseed)
         else:
             crn = gp_signals.FourierBasisCommonGP(cpl, orfs[orf],
                                                   components=components,
                                                   Tspan=Tspan,
-                                                  name=name, pshift=pshift,
-                                                  pseed=pseed)
+                                                  modes=modes, name=name,
+                                                  pshift=pshift, pseed=pseed)
     elif isinstance(orf, types.FunctionType):
         crn = gp_signals.FourierBasisCommonGP(cpl, orf,
                                               components=components,
                                               Tspan=Tspan,
-                                              name=name, pshift=pshift,
-                                              pseed=pseed)
+                                              modes=modes, name=name,
+                                              pshift=pshift, pseed=pseed)
     else:
         raise ValueError('ORF {} not recognized'.format(orf))
 
