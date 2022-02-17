@@ -37,11 +37,12 @@ def model_singlepsr_noise(psr, tm_var=False, tm_linear=False,
                           dm_var=False, dm_type='gp', dmgp_kernel='diag',
                           dm_psd='powerlaw', dm_nondiag_kernel='periodic',
                           dmx_data=None, dm_annual=False, gamma_dm_val=None,
-                          dm_dt=15, dm_df=200, dm_select=None, tndm=False,
-                          chrom_select=None, chrom_gp=False,
-                          chrom_gp_kernel='nondiag', chrom_psd='powerlaw',
-                          chrom_idx=4, chrom_quad=False, chrom_kernel='periodic',
-                          gamma_chrom_val=None, chrom_dt=15, chrom_df=200,
+                          dm_dt=15, dm_df=200, dm_select=None, dm_modes=None,
+                          chrom_gp=False, chrom_gp_kernel='nondiag',
+                          chrom_psd='powerlaw', chrom_idx=4, chrom_quad=False,
+                          chrom_kernel='periodic', gamma_chrom_val=None,
+                          chrom_dt=15, chrom_df=200, chrom_select=None,
+                          chrom_modes=None, tndm=False,
                           dm_expdip=False, dm_expdip_sign='negative',
                           dm_expdip_idx=2, dm_expdip_tmin=None,
                           dm_expdip_tmax=None, num_dmdips=1, dmdip_seqname=None,
@@ -60,7 +61,8 @@ def model_singlepsr_noise(psr, tm_var=False, tm_linear=False,
                           psr_model=False, factorized_like=False,
                           Tspan=None, fact_like_gamma=13./3, gw_components=10,
                           fact_like_logmin=None, fact_like_logmax=None,
-                          select='backend', tm_marg=False, dense_like=False):
+                          select='backend', select_ecorr='nanograv',
+                          tm_marg=False, dense_like=False):
     """
     Single pulsar noise model.
 
@@ -248,17 +250,15 @@ def model_singlepsr_noise(psr, tm_var=False, tm_linear=False,
             if dmgp_kernel == 'diag':
                 s += dm_noise_block(gp_kernel=dmgp_kernel, psd=dm_psd,
                                     prior=amp_prior, Tspan=Tspan_dm,
-                                    components=dm_components,
-                                    tnfreq=tnfreq, gamma_val=gamma_dm_val,
-                                    coefficients=coefficients,
-                                    tndm=tndm, select=dm_select,
+                                    components=dm_components, tnfreq=tnfreq,
+                                    gamma_val=gamma_dm_val, coefficients=coefficients,
+                                    tndm=tndm, select=dm_select, modes=dm_modes,
                                     logmin=logmin, logmax=logmax)
             elif dmgp_kernel == 'nondiag':
                 s += dm_noise_block(gp_kernel=dmgp_kernel, Tspan=Tspan_dm,
                                     nondiag_kernel=dm_nondiag_kernel,
-                                    dt=dm_dt, df=dm_df,
-                                    coefficients=coefficients,
-                                    tndm=tndm, select=dm_select,
+                                    dt=dm_dt, df=dm_df, coefficients=coefficients,
+                                    tndm=tndm, select=dm_select, modes=dm_modes,
                                     logmin=logmin, logmax=logmax)
         elif dm_type == 'dmx':
             s += chrom.dmx_signal(dmx_data=dmx_data[psr.name])
@@ -275,6 +275,7 @@ def model_singlepsr_noise(psr, tm_var=False, tm_linear=False,
                                        include_quadratic=chrom_quad,
                                        coefficients=coefficients,
                                        tndm=tndm, select=chrom_select,
+                                       modes=chrom_modes,
                                        logmin=logmin, logmax=logmax)
 
         if dm_expdip:
@@ -355,14 +356,14 @@ def model_singlepsr_noise(psr, tm_var=False, tm_linear=False,
 
     # adding white-noise, and acting on psr objects
     if ('NANOGrav' in psr.flags['pta'] or 'CHIME' in psr.flags['f']) and not is_wideband:
-        s2 = s + white_noise_block(vary=white_var, inc_ecorr=True,
-                                   tnequad=tnequad, select=select)
+        s2 = s + white_noise_block(vary=white_var, inc_ecorr=True, tnequad=tnequad,
+                                   select=select, select_ecorr=select_ecorr)
         model = s2(psr)
         if psr_model:
             Model = s2
     else:
-        s3 = s + white_noise_block(vary=white_var, inc_ecorr=False,
-                                   tnequad=tnequad, select=select)
+        s3 = s + white_noise_block(vary=white_var, inc_ecorr=False, tnequad=tnequad,
+                                   select=select, select_ecorr=select_ecorr)
         model = s3(psr)
         if psr_model:
             Model = s3
@@ -682,16 +683,18 @@ def model_general(psrs, tm_var=False, tm_linear=False, tmparam_list=None,
                   white_var=False, white_global=False, tnequad=False,
                   orf='crn', orf_names=None, orf_ifreq=0, leg_lmax=5,
                   log10_A_common=None, gamma_common=None, delta_common=None,
-                  common_logmin=None, common_logmax=None,
+                  common_modes=None, common_logmin=None, common_logmax=None,
                   upper_limit=False, upper_limit_red=None,
                   upper_limit_dm=None, upper_limit_common=None,
                   bayesephem=False, be_type='setIII_1980', sat_orb_elements=False,
                   is_wideband=False, use_dmdata=False, tndm=False,
-                  dm_var=False, dm_type='gp', dm_psd='powerlaw', dm_select=None,
-                  dm_annual=False, num_dmdips=1, dm_chrom=False,
-                  dmchrom_psd='powerlaw', dmchrom_idx=4, chrom_select=None,
+                  dm_var=False, dm_type='gp', dm_psd='powerlaw',
+                  dm_select=None, dm_modes=None, dm_annual=False, num_dmdips=1,
+                  dm_chrom=False, dmchrom_psd='powerlaw', dmchrom_idx=4,
+                  chrom_select=None, chrom_modes=None,
                   red_var=True, red_psd='powerlaw', red_select=None,
-                  red_breakflat=False, red_breakflat_fq=None, select='backend',
+                  red_breakflat=False, red_breakflat_fq=None,
+                  select='backend', select_ecorr='nanograv',
                   coefficients=False, pshift=False, pseed=None):
     """
     Reads in list of enterprise Pulsar instances and returns a PTA
@@ -935,8 +938,9 @@ def model_general(psrs, tm_var=False, tm_linear=False, tmparam_list=None,
             crn.append(common_red_noise_block(psd=common_psd, prior=amp_prior_common, tnfreq=tnfreq,
                                               Tspan=Tspan_common, components=common_components,
                                               log10_A_val=log10_A_val, gamma_val=gamma_common,
-                                              delta_val=delta_common, name='gw_{}'.format(elem_name),
-                                              orf=elem, orf_ifreq=orf_ifreq, leg_lmax=leg_lmax,
+                                              delta_val=delta_common, modes=common_modes,
+                                              name='gw_{}'.format(elem_name), orf=elem,
+                                              orf_ifreq=orf_ifreq, leg_lmax=leg_lmax,
                                               coefficients=coefficients, pshift=pshift, pseed=None,
                                               logmin=common_logmin, logmax=common_logmax))
             # orf_ifreq only affects freq_hd model.
@@ -950,14 +954,14 @@ def model_general(psrs, tm_var=False, tm_linear=False, tmparam_list=None,
             s += dm_noise_block(gp_kernel='diag', psd=dm_psd, prior=amp_prior_dm,
                                 Tspan=Tspan_dm, components=dm_components, tnfreq=tnfreq,
                                 tndm=tndm, coefficients=coefficients, select=dm_select,
-                                logmin=logmin, logmax=logmax)
+                                modes=dm_modes, logmin=logmin, logmax=logmax)
         if dm_annual:
             s += chrom.dm_annual_signal()
         if dm_chrom:
             s += chromatic_noise_block(psd=dmchrom_psd, idx=dmchrom_idx, Tspan=Tspan_dm,
                                        components=dm_components, tnfreq=tnfreq, tndm=tndm,
                                        coefficients=coefficients, select=chrom_select,
-                                       logmin=logmin, logmax=logmax,)
+                                       modes=chrom_modes, logmin=logmin, logmax=logmax,)
 
     # ephemeris model
     if bayesephem:
@@ -970,8 +974,8 @@ def model_general(psrs, tm_var=False, tm_linear=False, tmparam_list=None,
     for p in psrs:
         no_select = selections.Selection(selections.no_selection)
         if 'NANOGrav' in p.flags['pta'] and not is_wideband:
-            s2 = s + white_noise_block(vary=white_var, inc_ecorr=True,
-                                       tnequad=tnequad, select=select)
+            s2 = s + white_noise_block(vary=white_var, inc_ecorr=True, tnequad=tnequad,
+                                       select=select, select_ecorr=select_ecorr)
             if white_global == 'gequad':
                 s2 += white_signals.TNEquadNoise(log10_equad=parameter.Uniform(-9, -5),
                                                  selection=no_select, name=white_global)
@@ -989,8 +993,8 @@ def model_general(psrs, tm_var=False, tm_linear=False, tmparam_list=None,
             else:
                 models.append(s2(p))
         else:
-            s4 = s + white_noise_block(vary=white_var, inc_ecorr=False,
-                                       tnequad=tnequad, select=select)
+            s4 = s + white_noise_block(vary=white_var, inc_ecorr=False, tnequad=tnequad,
+                                       select=select, select_ecorr=select_ecorr)
             if white_global == 'gequad':
                 s4 += white_signals.TNEquadNoise(log10_tnequad=parameter.Uniform(-9, -5),
                                                  selection=no_select, name=white_global)
