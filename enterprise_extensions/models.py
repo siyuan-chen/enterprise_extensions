@@ -928,23 +928,37 @@ def model_general(psrs, tm_var=False, tm_linear=False, tmparam_list=None,
     # common red noise block
     if orf is not None:
         crn = []
+        counter = 0
         if orf_names is None:
             orf_names = orf
         for elem, elem_name in zip(orf.split(','), orf_names.split(',')):
-            if elem == 'zero_diag_bin_orf' or elem == 'zero_diag_legendre_orf':
-                log10_A_val = log10_A_common
+            if isinstance(log10_A_common, list):
+                log10_A_val = log10_A_common[counter]
             else:
-                log10_A_val = None
+                log10_A_val = log10_A_common
+            #if elem == 'zero_diag_bin_orf' or elem == 'zero_diag_legendre_orf':
+            #    log10_A_val = log10_A_common
+            #else:
+            #    log10_A_val = None
+            if isinstance(gamma_common, list):
+                gamma_val = gamma_common[counter]
+            else:
+                gamma_val = gamma_common
+            if isinstance(delta_common, list):
+                delta_val = delta_common[counter]
+            else:
+                delta_val = delta_common
             crn.append(common_red_noise_block(psd=common_psd, prior=amp_prior_common, tnfreq=tnfreq,
                                               Tspan=Tspan_common, components=common_components,
-                                              log10_A_val=log10_A_val, gamma_val=gamma_common,
-                                              delta_val=delta_common, modes=common_modes,
+                                              log10_A_val=log10_A_val, gamma_val=gamma_val,
+                                              delta_val=delta_val, modes=common_modes,
                                               name='gw_{}'.format(elem_name), orf=elem,
                                               orf_ifreq=orf_ifreq, leg_lmax=leg_lmax,
                                               coefficients=coefficients, pshift=pshift, pseed=None,
                                               logmin=common_logmin, logmax=common_logmax))
             # orf_ifreq only affects freq_hd model.
             # leg_lmax only affects (zero_diag_)legendre_orf model.
+            counter += 1
         crn = functools.reduce((lambda x, y: x+y), crn)
         s += crn
 

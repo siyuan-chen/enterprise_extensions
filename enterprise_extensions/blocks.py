@@ -843,7 +843,7 @@ def common_red_noise_block(psd='powerlaw', prior='log-uniform',
         if log10_A_val is not None:
             log10_Agw = parameter.Constant(log10_A_val)(amp_name)
 
-        if logmin is not None and logmax is not None:
+        elif logmin is not None and logmax is not None:
             if prior == 'uniform':
                 log10_Agw = parameter.LinearExp(logmin, logmax)(amp_name)
             elif prior == 'log-uniform':
