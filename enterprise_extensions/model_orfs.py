@@ -78,6 +78,29 @@ def bin_orf(pos1, pos2, params):
 
 
 @signal_base.function
+def bin_cos_orf(pos1, pos2, params):
+    '''
+    Agnostic binned spatial correlation function. Bin edges are
+    placed at edges and across cos angular separation space. Changing bin
+    edges will require manual intervention to create new function.
+
+    :param: params
+        inter-pulsar correlation bin amplitudes.
+
+    Author: S. R. Taylor (2020)
+
+    '''
+    if np.all(pos1 == pos2):
+        return 1
+    else:
+        # bins in cos angsep space
+        bins = np.array([-1, -0.7, -0.4, -0.1, 0.1, 0.4, 0.7, 1])
+        cosangsep = np.dot(pos1, pos2)
+        idx = np.digitize(cosangsep, bins)
+        return params[idx-1]
+
+
+@signal_base.function
 def zero_diag_bin_orf(pos1, pos2, params):
     '''
     Agnostic binned spatial correlation function. To be
