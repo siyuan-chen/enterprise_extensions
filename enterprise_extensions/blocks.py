@@ -822,6 +822,8 @@ def common_red_noise_block(psd='powerlaw', prior='log-uniform',
                 -0.9, 0.9, size=7)('gw_orf_spline')),
             'bin_orf': model_orfs.bin_orf(params=parameter.Uniform(
                 -1.0, 1.0, size=7)('gw_orf_bin')),
+            'bin_cos_orf': model_orfs.bin_cos_orf(params=parameter.Uniform(
+                -1.0, 1.0, size=7)('gw_orf_bin_cos')),
             'zero_diag_hd': model_orfs.zero_diag_hd(),
             'zero_diag_bin_orf': model_orfs.zero_diag_bin_orf(params=parameter.Uniform(
                 -1.0, 1.0, size=7)('gw_orf_bin_zero_diag')),
