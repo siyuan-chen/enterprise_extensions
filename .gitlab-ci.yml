@@ -1,0 +1,14 @@
+stages:
+  - builddown
+
+multi-build-master:
+  stage: builddown
+  trigger:
+    project: epta/docker_singularity
+    branch: master
+
+multi-build-branch15:
+  stage: builddown
+  trigger:
+    project: epta/docker_singularity
+    branch: 15-simplify-image
