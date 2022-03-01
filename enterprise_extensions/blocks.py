@@ -815,11 +815,15 @@ def common_red_noise_block(psd='powerlaw', prior='log-uniform',
             'gt': model_orfs.gt_orf(tau=parameter.Uniform(-1.5, 1.5)('tau')),
             'dipole': model_orfs.dipole_orf(),
             'monopole': model_orfs.monopole_orf(),
+            'param_monopole': model_orfs.param_monopole_orf(c=parameter.Uniform(
+                0.0, 1.0)('gw_orf_param_monopole')),
             'param_hd': model_orfs.param_hd_orf(a=parameter.Uniform(-1.5, 3.0)('gw_orf_param0'),
                                                 b=parameter.Uniform(-1.0, 0.5)('gw_orf_param1'),
                                                 c=parameter.Uniform(-1.0, 1.0)('gw_orf_param2')),
             'spline_orf': model_orfs.spline_orf(params=parameter.Uniform(
                 -0.9, 0.9, size=7)('gw_orf_spline')),
+            'interp_orf': model_orfs.interp_orf(params=parameter.Uniform(
+                -1.0, 1.0, size=7)('gw_orf_interp')),
             'bin_orf': model_orfs.bin_orf(params=parameter.Uniform(
                 -1.0, 1.0, size=7)('gw_orf_bin')),
             'bin_cos_orf': model_orfs.bin_cos_orf(params=parameter.Uniform(
@@ -833,7 +837,9 @@ def common_red_noise_block(psd='powerlaw', prior='log-uniform',
             'zero_diag_legendre_orf': model_orfs.zero_diag_legendre_orf(params=parameter.Uniform(
                 -1.0, 1.0, size=leg_lmax+1)('gw_orf_legendre_zero_diag')),
             'chebyshev_orf': model_orfs.chebyshev_orf(params=parameter.Uniform(
-                -1.0, 1.0, size=4)('gw_orf_chebyshev'))}
+                -1.0, 1.0, size=4)('gw_orf_chebyshev')),
+            'zero_diag_chebyshev_orf': model_orfs.zero_diag_chebyshev_orf(params=parameter.Uniform(
+                -1.0, 1.0, size=4)('gw_orf_chebyshev_zero_diag'))}
 
     if tnfreq and Tspan is not None:
         components = get_tncoeff(Tspan, components)

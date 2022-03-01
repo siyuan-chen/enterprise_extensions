@@ -27,6 +27,15 @@ def param_hd_orf(pos1, pos2, a=1.5, b=-0.25, c=0.5):
 
 
 @signal_base.function
+def param_monopole_orf(pos1, pos2, c=1.0):
+    """Parametrized Monopole spatial correlation function. Author: S. Chen"""
+    if np.all(pos1 == pos2):
+        return c + 1e-5
+    else:
+        return c
+
+
+@signal_base.function
 def spline_orf(pos1, pos2, params):
     '''
     Agnostic spline-interpolated spatial correlation function. Spline knots
@@ -51,6 +60,26 @@ def spline_orf(pos1, pos2, params):
 
         omc2 = (1 - np.dot(pos1, pos2)) / 2
         return finterp(omc2)
+
+
+@signal_base.function
+def interp_orf(pos1, pos2, params):
+    '''
+    Approximation of the spatial correlation function at seven angles
+    with linear interpolation in between. Bin edges are
+    placed at edges and across angular separation space. Changing bin
+    edges will require manual intervention to create new function.
+
+    Author: B. Goncharov (2021)
+
+    '''
+    if np.all(pos1 == pos2):
+        return 1
+    else:
+        bins = np.array([1e-3, 30.0, 60.0, 90.0,
+                         120.0, 150.0, 180.0]) * np.pi/180.0
+        angsep = np.arccos(np.dot(pos1, pos2))
+        return np.interp(angsep, bins, params)
 
 
 @signal_base.function
@@ -87,7 +116,7 @@ def bin_cos_orf(pos1, pos2, params):
     :param: params
         inter-pulsar correlation bin amplitudes.
 
-    Author: S. R. Taylor (2020)
+    Author: S. Chen (2022)
 
     '''
     if np.all(pos1 == pos2):
@@ -220,6 +249,44 @@ def zero_diag_legendre_orf(pos1, pos2, params):
         costheta = np.dot(pos1, pos2)
         orf = np.polynomial.legendre.legval(costheta, params)
         return orf
+
+
+@signal_base.function
+def chebyshev_orf(pos1, pos2, params):
+    """
+    Chebyshev polynomial decomposition of the spatial correlation
+    function assuming that the autocorrelation is normalized to 1
+    """
+    if np.all(pos1 == pos2):
+        return 1.
+    else:
+        zij = np.arccos(np.dot(pos1, pos2))
+        x = (zij - 0.5*np.pi)*2./np.pi
+        c1,c2,c3,c4 = params
+        ch = c1 + c2*x + c3*(2.*x*x-1.) + c4*(4.*x**3-3.*x)
+        if -1. < ch < 1.:
+            return ch
+        else:
+            return 100.
+
+
+@signal_base.function
+def zero_diag_chebyshev_orf(pos1, pos2, params):
+    """
+    Chebyshev polynomial decomposition of the spatial correlation 
+    function to be used in a "split likelihood" model
+    """
+    if np.all(pos1 == pos2):
+        return 1e-20
+    else:
+        zij = np.arccos(np.dot(pos1, pos2))
+        x = (zij - 0.5*np.pi)*2./np.pi
+        c1,c2,c3,c4 = params
+        ch = c1 + c2*x + c3*(2.*x*x-1.) + c4*(4.*x**3-3.*x)
+        if -1. < ch < 1.:
+            return ch
+        else:
+            return 100.
 
 
 @signal_base.function
@@ -383,21 +450,3 @@ def generalized_gwpol_psd(f, log10_A_tt=-15, log10_A_st=-15, alpha_tt=-2/3, alph
         (8*np.pi**2*f**3)
 
     return S_psd * np.repeat(df, 2)
-
-
-@signal_base.function
-def chebyshev_orf(pos1, pos2, params):
-    """
-    Chebyshev polynomial decomposition of the spatial correlation function
-    """
-    if np.all(pos1 == pos2):
-        return 1.
-    else:
-        zij = np.arccos(np.dot(pos1, pos2))
-        x = (zij - 0.5*np.pi)*2./np.pi
-        c1,c2,c3,c4 = params
-        ch = c1 + c2*x + c3*(2.*x*x-1.) + c4*(4.*x**3-3.*x)
-        if -1. < ch < 1.:
-            return ch
-        else:
-            return 100.
