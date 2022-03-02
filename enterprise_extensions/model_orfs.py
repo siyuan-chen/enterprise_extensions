@@ -7,7 +7,7 @@ from enterprise.signals import signal_base
 
 
 @signal_base.function
-def param_hd_orf(pos1, pos2, a=1.5, b=-0.25, c=0.5):
+def param_hd_orf(pos1, pos2, a=1.5, b=-0.25, c=0.5, diag=1.):
     '''
     Pre-factor parametrized Hellings & Downs spatial correlation function.
 
@@ -19,7 +19,7 @@ def param_hd_orf(pos1, pos2, a=1.5, b=-0.25, c=0.5):
 
     '''
     if np.all(pos1 == pos2):
-        return 1
+        return diag
     else:
         omc2 = (1 - np.dot(pos1, pos2)) / 2
         params = [a, b, c]
@@ -27,16 +27,7 @@ def param_hd_orf(pos1, pos2, a=1.5, b=-0.25, c=0.5):
 
 
 @signal_base.function
-def param_monopole_orf(pos1, pos2, c=1.0):
-    """Parametrized Monopole spatial correlation function. Author: S. Chen"""
-    if np.all(pos1 == pos2):
-        return c + 1e-5
-    else:
-        return c
-
-
-@signal_base.function
-def spline_orf(pos1, pos2, params):
+def spline_orf(pos1, pos2, params, diag=1.):
     '''
     Agnostic spline-interpolated spatial correlation function. Spline knots
     are placed at edges, zeros, and minimum of H&D curve. Changing locations
@@ -50,7 +41,7 @@ def spline_orf(pos1, pos2, params):
 
     '''
     if np.all(pos1 == pos2):
-        return 1
+        return diag
     else:
         # spline knots placed at edges, zeros, and minimum of H&D
         spl_knts = np.array([1e-3, 25.0, 49.3, 82.5,
@@ -63,19 +54,20 @@ def spline_orf(pos1, pos2, params):
 
 
 @signal_base.function
-def interp_orf(pos1, pos2, params):
+def interp_orf(pos1, pos2, params, diag=1.):
     '''
     Approximation of the spatial correlation function at seven angles
-    with linear interpolation in between. Bin edges are
-    placed at edges and across angular separation space. Changing bin
-    edges will require manual intervention to create new function.
+    across angular separation space with linear interpolation in between.
+    Changing angles will require manual intervention to create new function.
 
+    Reference: Goncharov et al. (2021), https://arxiv.org/abs/2107.12112
     Author: B. Goncharov (2021)
 
     '''
     if np.all(pos1 == pos2):
-        return 1
+        return diag
     else:
+        # angles/bins in angsep space
         bins = np.array([1e-3, 30.0, 60.0, 90.0,
                          120.0, 150.0, 180.0]) * np.pi/180.0
         angsep = np.arccos(np.dot(pos1, pos2))
@@ -83,7 +75,7 @@ def interp_orf(pos1, pos2, params):
 
 
 @signal_base.function
-def bin_orf(pos1, pos2, params):
+def bin_orf(pos1, pos2, params, diag=1.):
     '''
     Agnostic binned spatial correlation function. Bin edges are
     placed at edges and across angular separation space. Changing bin
@@ -96,7 +88,7 @@ def bin_orf(pos1, pos2, params):
 
     '''
     if np.all(pos1 == pos2):
-        return 1
+        return diag
     else:
         # bins in angsep space
         bins = np.array([1e-3, 30.0, 50.0, 80.0, 100.0,
@@ -107,7 +99,7 @@ def bin_orf(pos1, pos2, params):
 
 
 @signal_base.function
-def bin_cos_orf(pos1, pos2, params):
+def bin_cos_orf(pos1, pos2, params, diag=1.):
     '''
     Agnostic binned spatial correlation function. Bin edges are
     placed at edges and across cos angular separation space. Changing bin
@@ -120,56 +112,13 @@ def bin_cos_orf(pos1, pos2, params):
 
     '''
     if np.all(pos1 == pos2):
-        return 1
+        return diag
     else:
         # bins in cos angsep space
         bins = np.array([-1, -0.7, -0.4, -0.1, 0.1, 0.4, 0.7, 1])
         cosangsep = np.dot(pos1, pos2)
         idx = np.digitize(cosangsep, bins)
         return params[idx-1]
-
-
-@signal_base.function
-def zero_diag_bin_orf(pos1, pos2, params):
-    '''
-    Agnostic binned spatial correlation function. To be
-    used in a "split likelihood" model with an additional common
-    uncorrelated red process. The latter is necessary to regularize
-    the overall Phi covariance matrix.
-
-    :param: params
-        inter-pulsar correlation bin amplitudes.
-
-    Author: S. R. Taylor (2020)
-
-    '''
-    if np.all(pos1 == pos2):
-        return 1e-20
-    else:
-        # bins in angsep space
-        bins = np.array([1e-3, 30.0, 50.0, 80.0, 100.0,
-                         120.0, 150.0, 180.0]) * np.pi/180.0
-        angsep = np.arccos(np.dot(pos1, pos2))
-        idx = np.digitize(angsep, bins)
-        return params[idx-1]
-
-
-@signal_base.function
-def zero_diag_hd(pos1, pos2):
-    '''
-    Off-diagonal Hellings & Downs spatial correlation function. To be
-    used in a "split likelihood" model with an additional common uncorrelated
-    red process. The latter is necessary to regularize the overall Phi
-    covariance matrix.
-
-    Author: S. R. Taylor (2020)
-
-    '''
-    if np.all(pos1 == pos2):
-        return 1e-20
-    else:
-        omc2 = (1 - np.dot(pos1, pos2)) / 2
-        return 1.5 * omc2 * np.log(omc2) - 0.25 * omc2 + 0.5
 
 
 @signal_base.function
@@ -202,24 +151,34 @@ def freq_hd(pos1, pos2, params):
 
 
 @signal_base.function
-def legendre_orf(pos1, pos2, params):
+def legendre_orf(pos1, pos2, params, diag=1.):
     '''
-    Legendre polynomial spatial correlation function. Assumes process
-    normalization such that autocorrelation signature is 1. A separate function
-    is needed to use a "split likelihood" model with this Legendre process
-    decoupled from the autocorrelation signature ("zero_diag_legendre_orf").
+    Legendre polynomial spatial correlation function.
+    Assumes process normalization when autocorrelation signature is set to 1.
+    A separate function is needed to use a "split likelihood" model with this
+    Legendre process when the autocorrelation signature is set to zero. To be used
+    in a "split likelihood" model with an additional common uncorrelated red process.
+    The latter is necessary to regularize the overall Phi covariance matrix.
 
     :param: params
         Legendre polynomial amplitudes describing the Legendre series approximation
         to the inter-pulsar correlation signature.
         H&D coefficients are a_0=0, a_1=0, a_2=0.3125, a_3=0.0875, ...
 
+    :param: diag
+        float or parameter to set the diagonal auto correlation terms
+        default: 1 (auto correlation enabled)
+        1e-20 (zero diagonal cross correlation only,
+        to be used in a "split likelihood" model with
+        an additional common uncorrelated red process)
+        enterprise parameter to be sampled
+
     Reference: Gair et al. (2014), https://arxiv.org/abs/1406.4664
     Author: S. R. Taylor (2020)
 
     '''
     if np.all(pos1 == pos2):
-        return 1
+        return diag
     else:
         costheta = np.dot(pos1, pos2)
         orf = np.polynomial.legendre.legval(costheta, params)
@@ -227,38 +186,23 @@ def legendre_orf(pos1, pos2, params):
 
 
 @signal_base.function
-def zero_diag_legendre_orf(pos1, pos2, params):
-    '''
-    Legendre polynomial spatial correlation function. To be
-    used in a "split likelihood" model with an additional common uncorrelated
-    red process. The latter is necessary to regularize the overall Phi
-    covariance matrix.
-
-    :param: params
-        Legendre polynomial amplitudes describing the Legendre series approximation
-        to the inter-pulsar correlation signature.
-        H&D coefficients are a_0=0, a_1=0, a_2=0.3125, a_3=0.0875, ...
-
-    Reference: Gair et al. (2014), https://arxiv.org/abs/1406.4664
-    Author: S. R. Taylor (2020)
-
-    '''
-    if np.all(pos1 == pos2):
-        return 1e-20
-    else:
-        costheta = np.dot(pos1, pos2)
-        orf = np.polynomial.legendre.legval(costheta, params)
-        return orf
-
-
-@signal_base.function
-def chebyshev_orf(pos1, pos2, params):
+def chebyshev_orf(pos1, pos2, params, diag=1.):
     """
-    Chebyshev polynomial decomposition of the spatial correlation
-    function assuming that the autocorrelation is normalized to 1
+    Chebyshev polynomial decomposition of the spatial correlation function.
+    
+    :param: diag
+        float or parameter to set the diagonal autocorrelation terms
+        default: 1 (autocorrelation enabled)
+        1e-20 (zero diagonal cross correlation only,
+        to be used in a "split likelihood" model with
+        an additional common uncorrelated red process)
+        enterprise parameter to be sampled
+        
+    Reference: Chen et al. (2021), https://arxiv.org/abs/2110.13184
+    Author: S. Chen (2021)
     """
     if np.all(pos1 == pos2):
-        return 1.
+        return diag
     else:
         zij = np.arccos(np.dot(pos1, pos2))
         x = (zij - 0.5*np.pi)*2./np.pi
@@ -271,50 +215,58 @@ def chebyshev_orf(pos1, pos2, params):
 
 
 @signal_base.function
-def zero_diag_chebyshev_orf(pos1, pos2, params):
-    """
-    Chebyshev polynomial decomposition of the spatial correlation 
-    function to be used in a "split likelihood" model
-    """
-    if np.all(pos1 == pos2):
-        return 1e-20
-    else:
-        zij = np.arccos(np.dot(pos1, pos2))
-        x = (zij - 0.5*np.pi)*2./np.pi
-        c1,c2,c3,c4 = params
-        ch = c1 + c2*x + c3*(2.*x*x-1.) + c4*(4.*x**3-3.*x)
-        if -1. < ch < 1.:
-            return ch
-        else:
-            return 100.
-
-
-@signal_base.function
-def hd_orf(pos1, pos2):
+def hd_orf(pos1, pos2, diag=1.):
     """Hellings & Downs spatial correlation function."""
     if np.all(pos1 == pos2):
-        return 1
+        return diag
     else:
         omc2 = (1 - np.dot(pos1, pos2)) / 2
         return 1.5 * omc2 * np.log(omc2) - 0.25 * omc2 + 0.5
 
 
 @signal_base.function
-def dipole_orf(pos1, pos2):
+def dipole_orf(pos1, pos2, diag=1.):
     """Dipole spatial correlation function."""
     if np.all(pos1 == pos2):
-        return 1 + 1e-5
+        return diag + 1e-5
     else:
         return np.dot(pos1, pos2)
 
 
 @signal_base.function
-def monopole_orf(pos1, pos2):
+def monopole_orf(pos1, pos2, diag=1.):
     """Monopole spatial correlation function."""
     if np.all(pos1 == pos2):
-        return 1.0 + 1e-5
+        return diag + 1e-5
     else:
-        return 1.0
+        return 1.
+
+
+@signal_base.function
+def param_monopole_orf(pos1, pos2, c=1., diag=1.):
+    '''
+    Parametrized Monopole spatial correlation function.
+
+    :param: c:
+        coefficient of the Monopole correlation normalization
+
+    :param: diag
+        float or parameter to set the diagonal auto correlation terms
+        default: 1 (auto correlation enabled)
+        1e-20 (zero diagonal cross correlation only,
+        to be used in a "split likelihood" model with
+        an additional common uncorrelated red process)
+        enterprise parameter to be sampled
+
+    Author: S. Chen (2022)
+    '''
+    if np.all(pos1 == pos2):
+        if diag is not None:
+            return diag + 1e-5
+        else:
+            return c + 1e-5
+    else:
+        return c
 
 
 @signal_base.function

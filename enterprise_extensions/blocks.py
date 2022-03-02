@@ -382,7 +382,8 @@ def dm_noise_block(gp_kernel='diag', psd='powerlaw', nondiag_kernel='periodic',
                    prior='log-uniform', name='dm', dt=15, df=200, Tspan=None,
                    components=30, tnfreq=False, select=None, modes=None,
                    gamma_val=None, delta_val=None, coefficients=False,
-                   tndm=False, logmin=None, logmax=None):
+                   tndm=False, logmin=None, logmax=None, dropout=False,
+                   k_threshold=0.5):
     """
     Returns DM noise model:
 
@@ -405,6 +406,9 @@ def dm_noise_block(gp_kernel='diag', psd='powerlaw', nondiag_kernel='periodic',
     :param gamma_val:
         If given, this is the fixed slope of the power-law for
         powerlaw, turnover, or tprocess DM-variations
+    :param dropout: Use a dropout analysis for DM-variations models.
+        Currently only supports power law option.
+    :param k_threshold: Threshold for dropout analysis.
     """
     if tnfreq and Tspan is not None:
         components = get_tncoeff(Tspan, components)
@@ -432,7 +436,12 @@ def dm_noise_block(gp_kernel='diag', psd='powerlaw', nondiag_kernel='periodic',
                 gamma_dm = parameter.Uniform(0, 7)
 
             # different PSD function parameters
-            if psd == 'powerlaw':
+            if psd == 'powerlaw' and dropout:
+                k_drop = parameter.Uniform(0, 1)
+                dm_prior = drop.dropout_powerlaw(log10_A=log10_A_dm, gamma=gamma_dm,
+                                                 dropout_psr='all', k_drop=k_drop,
+                                                 k_threshold=k_threshold)
+            elif psd == 'powerlaw':
                 dm_prior = utils.powerlaw(log10_A=log10_A_dm, gamma=gamma_dm)
             elif psd == 'broken_powerlaw':
                 kappa_dm = parameter.Uniform(0.01, 0.5)
@@ -571,7 +580,8 @@ def chromatic_noise_block(gp_kernel='nondiag', psd='powerlaw',
                           components=30, tnfreq=False,
                           select=None, modes=None, gamma_val=None,
                           delta_val=None, coefficients=False,
-                          tndm=False, logmin=None, logmax=None):
+                          tndm=False, logmin=None, logmax=None,
+                          dropout=False, k_threshold=0.5):
     """
     Returns GP chromatic noise model :
 
@@ -604,7 +614,9 @@ def chromatic_noise_block(gp_kernel='nondiag', psd='powerlaw',
         Number of frequencies to use in 'diag' GPs.
     :param coefficients:
         Whether to keep coefficients of the GP.
-
+    :param dropout: Use a dropout analysis for chromatic noise models.
+        Currently only supports power law option.
+    :param k_threshold: Threshold for dropout analysis.
     """
     if tnfreq and Tspan is not None:
         components = get_tncoeff(Tspan, components)
@@ -638,7 +650,12 @@ def chromatic_noise_block(gp_kernel='nondiag', psd='powerlaw',
                 gamma = parameter.Uniform(0, 7)
 
             # PSD
-            if psd == 'powerlaw':
+            if psd == 'powerlaw' and dropout:
+                k_drop = parameter.Uniform(0, 1)
+                chm_prior = drop.dropout_powerlaw(log10_A=log10_A, gamma=gamma,
+                                                  dropout_psr='all', k_drop=k_drop,
+                                                  k_threshold=k_threshold)
+            elif psd == 'powerlaw':
                 chm_prior = utils.powerlaw(log10_A=log10_A, gamma=gamma)
             elif psd == 'broken_powerlaw':
                 kappa = parameter.Uniform(0.01, 0.5)
@@ -758,7 +775,9 @@ def common_red_noise_block(psd='powerlaw', prior='log-uniform',
                            delta_val=None, logmin=None, logmax=None,
                            orf=None, orf_ifreq=0, leg_lmax=5,
                            name='gw', coefficients=False, select=None,
-                           modes=None, pshift=False, pseed=None):
+                           modes=None, pshift=False, pseed=None,
+                           dropout=False, k_threshold=0.5,
+                           dropout_psr='all'):
     """
     Returns common red noise model:
 
@@ -805,7 +824,9 @@ def common_red_noise_block(psd='powerlaw', prior='log-uniform',
     :param pseed:
         Option to provide a seed for the random phase shift.
     :param name: Name of common red process
-
+    :param dropout: Use a dropout analysis for common red noise models.
+        Currently only supports power law option.
+    :param k_threshold: Threshold for dropout analysis.
     """
 
     orfs = {'crn': None, 'hd': model_orfs.hd_orf(),
@@ -817,9 +838,16 @@ def common_red_noise_block(psd='powerlaw', prior='log-uniform',
             'monopole': model_orfs.monopole_orf(),
             'param_monopole': model_orfs.param_monopole_orf(c=parameter.Uniform(
                 0.0, 1.0)('gw_orf_param_monopole')),
-            'param_hd': model_orfs.param_hd_orf(a=parameter.Uniform(-1.5, 3.0)('gw_orf_param0'),
-                                                b=parameter.Uniform(-1.0, 0.5)('gw_orf_param1'),
-                                                c=parameter.Uniform(-1.0, 1.0)('gw_orf_param2')),
+            'zero_diag_param_monopole': model_orfs.param_monopole_orf(c=parameter.Uniform(
+                0.0, 1.0)('gw_orf_param_monopole_zero_diag'), diag=1e-20),
+            'param_hd': model_orfs.param_hd_orf(
+                a=parameter.Uniform(-1.5, 3.0)('gw_orf_param_hd_0'),
+                b=parameter.Uniform(-1.0, 0.5)('gw_orf_param_hd_1'),
+                c=parameter.Uniform(-1.0, 1.0)('gw_orf_param_hd_2')),
+            'zero_diag_param_hd': model_orfs.param_hd_orf(
+                a=parameter.Uniform(-1.5, 3.0)('gw_orf_param_hd_zero_diag_0'),
+                b=parameter.Uniform(-1.0, 0.5)('gw_orf_param_hd_zero_diag_1'),
+                c=parameter.Uniform(-1.0, 1.0)('gw_orf_param_hd_zero_diag_2'), diag=1e-20),
             'spline_orf': model_orfs.spline_orf(params=parameter.Uniform(
                 -0.9, 0.9, size=7)('gw_orf_spline')),
             'interp_orf': model_orfs.interp_orf(params=parameter.Uniform(
@@ -828,18 +856,26 @@ def common_red_noise_block(psd='powerlaw', prior='log-uniform',
                 -1.0, 1.0, size=7)('gw_orf_bin')),
             'bin_cos_orf': model_orfs.bin_cos_orf(params=parameter.Uniform(
                 -1.0, 1.0, size=7)('gw_orf_bin_cos')),
-            'zero_diag_hd': model_orfs.zero_diag_hd(),
-            'zero_diag_bin_orf': model_orfs.zero_diag_bin_orf(params=parameter.Uniform(
-                -1.0, 1.0, size=7)('gw_orf_bin_zero_diag')),
             'freq_hd': model_orfs.freq_hd(params=[components, orf_ifreq]),
+            'zero_diag_hd': model_orfs.hd_orf(diag=1e-20),
+            'zero_diag_dipole': model_orfs.dipole_orf(diag=1e-20),
+            'zero_diag_monopole': model_orfs.monopole_orf(diag=1e-20),
+            'zero_diag_spline_orf': model_orfs.spline_orf(params=parameter.Uniform(
+                -0.9, 0.9, size=7)('gw_orf_spline_zero_diag'), diag=1e-20),
+            'zero_diag_interp_orf': model_orfs.interp_orf(params=parameter.Uniform(
+                -1.0, 1.0, size=7)('gw_orf_interp_zero_diag'), diag=1e-20),
+            'zero_diag_bin_orf': model_orfs.bin_orf(params=parameter.Uniform(
+                -1.0, 1.0, size=7)('gw_orf_bin_zero_diag'), diag=1e-20),
+            'zero_diag_bin_cos_orf': model_orfs.bin_cos_orf(params=parameter.Uniform(
+                -1.0, 1.0, size=7)('gw_orf_bin_cos_zero_diag'), diag=1e-20),
             'legendre_orf': model_orfs.legendre_orf(params=parameter.Uniform(
                 -1.0, 1.0, size=leg_lmax+1)('gw_orf_legendre')),
-            'zero_diag_legendre_orf': model_orfs.zero_diag_legendre_orf(params=parameter.Uniform(
-                -1.0, 1.0, size=leg_lmax+1)('gw_orf_legendre_zero_diag')),
+            'zero_diag_legendre_orf': model_orfs.legendre_orf(params=parameter.Uniform(
+                -1.0, 1.0, size=leg_lmax+1)('gw_orf_legendre_zero_diag'), diag=1e-20),
             'chebyshev_orf': model_orfs.chebyshev_orf(params=parameter.Uniform(
                 -1.0, 1.0, size=4)('gw_orf_chebyshev')),
-            'zero_diag_chebyshev_orf': model_orfs.zero_diag_chebyshev_orf(params=parameter.Uniform(
-                -1.0, 1.0, size=4)('gw_orf_chebyshev_zero_diag'))}
+            'zero_diag_chebyshev_orf': model_orfs.chebyshev_orf(params=parameter.Uniform(
+                -1.0, 1.0, size=4)('gw_orf_chebyshev_zero_diag'), diag=1e-20)}
 
     if tnfreq and Tspan is not None:
         components = get_tncoeff(Tspan, components)
@@ -872,7 +908,12 @@ def common_red_noise_block(psd='powerlaw', prior='log-uniform',
             gamma_gw = parameter.Uniform(0, 7)(gam_name)
 
         # common red noise PSD
-        if psd == 'powerlaw':
+        if psd == 'powerlaw' and dropout:
+            k_drop = parameter.Uniform(0, 1)
+            cpl = drop.dropout_powerlaw(log10_A=log10_Agw, gamma=gamma_gw,
+                                        dropout_psr=dropout_psr, k_drop=k_drop,
+                                        k_threshold=k_threshold)
+        elif psd == 'powerlaw':
             cpl = utils.powerlaw(log10_A=log10_Agw, gamma=gamma_gw)
         elif psd == 'broken_powerlaw':
             delta_name = '{}_delta'.format(name)
