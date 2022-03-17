@@ -253,6 +253,9 @@ def red_noise_block(psd='powerlaw', prior='log-uniform', Tspan=None,
     elif select == 'band' or select == 'band+':
         # define selection by observing band
         selection = selections.Selection(selections.by_band)
+    elif select == 'epta-band':
+        # define selection by observing band, set for EPTA data
+        selection = selections.Selection(selections.epta_bands)
     elif isinstance(select, list):
         # define selection by list of custom backend
         selection = selections.Selection(selections.custom_backends(select))
@@ -984,6 +987,9 @@ def common_red_noise_block(psd='powerlaw', prior='log-uniform',
     elif select == 'band' or select == 'band+':
         # define selection by observing band
         selection = selections.Selection(selections.by_band)
+    elif select == 'epta-band':
+        # define selection by observing band, set for EPTA data
+        selection = selections.Selection(selections.epta_bands)
     elif isinstance(select, list):
         # define selection by list of custom backend
         selection = selections.Selection(selections.custom_backends(select))
