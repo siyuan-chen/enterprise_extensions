@@ -23,20 +23,20 @@ def dropout_powerlaw(f, name, log10_A=-16, gamma=5,
     """
 
     df = np.diff(np.concatenate((np.array([0]), f[::2])))
-    if name == 'all':
+    if dropout_psr == 'all':
         if k_drop >= k_threshold:
             k_switch = 1.0
         elif k_drop < k_threshold:
-            k_switch = 0.0
+            k_switch = 1e-30
 
         return k_switch * ((10**log10_A)**2 / 12.0 / np.pi**2 *
                            const.fyr**(gamma-3) * f**(-gamma) * np.repeat(df, 2))
 
-    elif name == dropout_psr:
+    elif dropout_psr == name:
         if k_drop >= k_threshold:
             k_switch = 1.0
         elif k_drop < k_threshold:
-            k_switch = 0.0
+            k_switch = 1e-30
 
         return k_switch * ((10**log10_A)**2 / 12.0 / np.pi**2 *
                            const.fyr**(gamma-3) * f**(-gamma) * np.repeat(df, 2))
@@ -64,7 +64,7 @@ def dropout_physical_ephem_delay(toas, planetssb, pos_t, frame_drift_rate=0,
     if k_drop >= k_threshold:
         k_switch = 1.0
     elif k_drop < k_threshold:
-        k_switch = 0.0
+        k_switch = 1e-30
 
     # convert toas to MJD
     mjd = toas / 86400
