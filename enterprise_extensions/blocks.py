@@ -779,8 +779,8 @@ def common_red_noise_block(psd='powerlaw', prior='log-uniform',
                            orf=None, orf_ifreq=0, leg_lmax=5,
                            name='gw', coefficients=False, select=None,
                            modes=None, pshift=False, pseed=None,
-                           dropout=False, k_threshold=0.5,
-                           dropout_psr='all'):
+                           dropout=False, dropout_psr='all',
+                           k_threshold=0.5):
     """
     Returns common red noise model:
 

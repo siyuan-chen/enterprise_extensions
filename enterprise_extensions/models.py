@@ -695,7 +695,8 @@ def model_general(psrs, tm_var=False, tm_linear=False, tmparam_list=None,
                   red_var=True, red_psd='powerlaw', red_select=None,
                   red_breakflat=False, red_breakflat_fq=None,
                   select='backend', select_ecorr='nanograv',
-                  coefficients=False, pshift=False, pseed=None):
+                  coefficients=False, pshift=False, pseed=None,
+                  dropout=False, dropout_psr='all', k_threshold=0.5):
     """
     Reads in list of enterprise Pulsar instances and returns a PTA
     object instantiated with user-supplied options.
@@ -955,6 +956,8 @@ def model_general(psrs, tm_var=False, tm_linear=False, tmparam_list=None,
                                               name='gw_{}'.format(elem_name), orf=elem,
                                               orf_ifreq=orf_ifreq, leg_lmax=leg_lmax,
                                               coefficients=coefficients, pshift=pshift, pseed=None,
+                                              dropout=dropout, dropout_psr=dropout_psr,
+                                              k_threshold=k_threshold,
                                               logmin=common_logmin, logmax=common_logmax))
             # orf_ifreq only affects freq_hd model.
             # leg_lmax only affects (zero_diag_)legendre_orf model.
@@ -975,7 +978,7 @@ def model_general(psrs, tm_var=False, tm_linear=False, tmparam_list=None,
             s += chromatic_noise_block(psd=dmchrom_psd, idx=dmchrom_idx, Tspan=Tspan_dm,
                                        components=dm_components, tnfreq=tnfreq, tndm=tndm,
                                        coefficients=coefficients, select=chrom_select,
-                                       modes=chrom_modes, logmin=logmin, logmax=logmax,)
+                                       modes=chrom_modes, logmin=logmin, logmax=logmax)
 
     # ephemeris model
     if bayesephem:
