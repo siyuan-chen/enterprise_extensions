@@ -26,7 +26,8 @@ from enterprise_extensions.timing import timing_block
 
 def model_singlepsr_noise(psr, tm_var=False, tm_linear=False,
                           tmparam_list=None, tm_svd=False, tm_norm=True,
-                          noisedict=None, white_var=True, tnequad=False,
+                          noisedict=None, white_var=True,
+                          tnequad=False, inc_ecorr=False,
                           components=30, logmin=None, logmax=None,
                           Tspan_red=None, Tspan_dm=None, red_var=True,
                           psd='powerlaw', red_select=None, red_components=30,
@@ -61,7 +62,7 @@ def model_singlepsr_noise(psr, tm_var=False, tm_linear=False,
                           psr_model=False, factorized_like=False,
                           Tspan=None, fact_like_gamma=13./3, gw_components=10,
                           fact_like_logmin=None, fact_like_logmax=None,
-                          select='backend', select_ecorr='nanograv',
+                          select='backend', ecorr_select='nanograv',
                           tm_marg=False, dense_like=False):
     """
     Single pulsar noise model.
@@ -356,14 +357,14 @@ def model_singlepsr_noise(psr, tm_var=False, tm_linear=False,
 
     # adding white-noise, and acting on psr objects
     if ('NANOGrav' in psr.flags['pta'] or 'CHIME' in psr.flags['f']) and not is_wideband:
-        s2 = s + white_noise_block(vary=white_var, inc_ecorr=True, tnequad=tnequad,
-                                   select=select, select_ecorr=select_ecorr)
+        s2 = s + white_noise_block(vary=white_var, inc_ecorr=inc_ecorr, tnequad=tnequad,
+                                   select=select, ecorr_select=ecorr_select)
         model = s2(psr)
         if psr_model:
             Model = s2
     else:
-        s3 = s + white_noise_block(vary=white_var, inc_ecorr=False, tnequad=tnequad,
-                                   select=select, select_ecorr=select_ecorr)
+        s3 = s + white_noise_block(vary=white_var, inc_ecorr=inc_ecorr, tnequad=tnequad,
+                                   select=select, ecorr_select=ecorr_select)
         model = s3(psr)
         if psr_model:
             Model = s3
@@ -680,7 +681,8 @@ def model_general(psrs, tm_var=False, tm_linear=False, tmparam_list=None,
                   common_components=30, red_components=30, dm_components=30,
                   modes=None, wgts=None, logfreq=False, nmodes_log=10,
                   tnfreq=False, dense_like=False, noisedict=None,
-                  white_var=False, white_global=False, tnequad=False,
+                  white_var=False, white_global=False,
+                  tnequad=False, inc_ecorr=False,
                   orf='crn', orf_names=None, orf_ifreq=0, leg_lmax=5,
                   log10_A_common=None, gamma_common=None, delta_common=None,
                   common_modes=None, common_logmin=None, common_logmax=None,
@@ -694,7 +696,7 @@ def model_general(psrs, tm_var=False, tm_linear=False, tmparam_list=None,
                   chrom_select=None, chrom_modes=None,
                   red_var=True, red_psd='powerlaw', red_select=None,
                   red_breakflat=False, red_breakflat_fq=None,
-                  select='backend', select_ecorr='nanograv',
+                  select='backend', ecorr_select='nanograv',
                   coefficients=False, pshift=False, pseed=None,
                   dropout=False, dropout_psr='all', k_threshold=0.5):
     """
@@ -956,14 +958,14 @@ def model_general(psrs, tm_var=False, tm_linear=False, tmparam_list=None,
                                               name='gw_{}'.format(elem_name), orf=elem,
                                               orf_ifreq=orf_ifreq, leg_lmax=leg_lmax,
                                               coefficients=coefficients, pshift=pshift, pseed=None,
+                                              logmin=common_logmin, logmax=common_logmax,
                                               dropout=dropout, dropout_psr=dropout_psr,
-                                              k_threshold=k_threshold,
-                                              logmin=common_logmin, logmax=common_logmax))
+                                              k_threshold=k_threshold))
             # orf_ifreq only affects freq_hd model.
             # leg_lmax only affects (zero_diag_)legendre_orf model.
             counter += 1
         crn = functools.reduce((lambda x, y: x+y), crn)
-        s += crn
+        #s += crn
 
     # DM variations
     if dm_var:
@@ -989,10 +991,14 @@ def model_general(psrs, tm_var=False, tm_linear=False, tmparam_list=None,
     models = []
 
     for p in psrs:
+        if p.name == dropout_psr or orf is None:
+            s1 = s
+        else:
+            s1 = s + crn
         no_select = selections.Selection(selections.no_selection)
         if 'NANOGrav' in p.flags['pta'] and not is_wideband:
-            s2 = s + white_noise_block(vary=white_var, inc_ecorr=True, tnequad=tnequad,
-                                       select=select, select_ecorr=select_ecorr)
+            s2 = s1 + white_noise_block(vary=white_var, inc_ecorr=inc_ecorr, tnequad=tnequad,
+                                        select=select, ecorr_select=ecorr_select)
             if white_global == 'gequad':
                 s2 += white_signals.TNEquadNoise(log10_equad=parameter.Uniform(-9, -5),
                                                  selection=no_select, name=white_global)
@@ -1010,8 +1016,8 @@ def model_general(psrs, tm_var=False, tm_linear=False, tmparam_list=None,
             else:
                 models.append(s2(p))
         else:
-            s4 = s + white_noise_block(vary=white_var, inc_ecorr=False, tnequad=tnequad,
-                                       select=select, select_ecorr=select_ecorr)
+            s4 = s1 + white_noise_block(vary=white_var, inc_ecorr=inc_ecorr, tnequad=tnequad,
+                                        select=select, ecorr_select=ecorr_select)
             if white_global == 'gequad':
                 s4 += white_signals.TNEquadNoise(log10_tnequad=parameter.Uniform(-9, -5),
                                                  selection=no_select, name=white_global)

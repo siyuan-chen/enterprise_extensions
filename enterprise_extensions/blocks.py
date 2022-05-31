@@ -43,7 +43,7 @@ def get_tncoeff(tspan, components):
 
 def white_noise_block(vary=False, inc_ecorr=False, gp_ecorr=False,
                       efac1=False, tnequad=False, select='backend',
-                      select_ecorr='nanograv', name=None):
+                      ecorr_select='nanograv', name=None):
     """
     Returns the white noise block of the model:
 
@@ -80,14 +80,14 @@ def white_noise_block(vary=False, inc_ecorr=False, gp_ecorr=False,
         selection = selections.Selection(selections.no_selection)
 
     # define selection by backends for ECORR
-    if select_ecorr == 'nanograv':
+    if ecorr_select == 'nanograv':
         selection_ecorr = selections.Selection(selections.nanograv_backends)
-    elif select_ecorr == 'channelized':
+    elif ecorr_select == 'channelized':
         selection_ecorr = selections.Selection(channelized_backends)
-    elif isinstance(select_ecorr, list):
-        selection_ecorr = selections.Selection(selections.custom_backends(select_ecorr))
-    elif isinstance(select_ecorr, dict):
-        selection_ecorr = selections.Selection(selections.custom_backends_dict(select_ecorr))
+    elif isinstance(ecorr_select, list):
+        selection_ecorr = selections.Selection(selections.custom_backends(ecorr_select))
+    elif isinstance(ecorr_select, dict):
+        selection_ecorr = selections.Selection(selections.custom_backends_dict(ecorr_select))
     else:
         selection_ecorr = selections.Selection(selections.no_selection)
 
@@ -779,8 +779,8 @@ def common_red_noise_block(psd='powerlaw', prior='log-uniform',
                            orf=None, orf_ifreq=0, leg_lmax=5,
                            name='gw', coefficients=False, select=None,
                            modes=None, pshift=False, pseed=None,
-                           dropout=False, dropout_psr='all',
-                           k_threshold=0.5):
+                           dropout=False, k_threshold=0.5,
+                           dropout_psr='all'):
     """
     Returns common red noise model:
 
