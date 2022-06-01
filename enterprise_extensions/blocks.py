@@ -780,7 +780,7 @@ def common_red_noise_block(psd='powerlaw', prior='log-uniform',
                            name='gw', coefficients=False, select=None,
                            modes=None, pshift=False, pseed=None,
                            dropout=False, k_threshold=0.5,
-                           dropout_psr='all'):
+                           dropout_psr='all', idx=None, tndm=False):
     """
     Returns common red noise model:
 
@@ -829,7 +829,11 @@ def common_red_noise_block(psd='powerlaw', prior='log-uniform',
     :param name: Name of common red process
     :param dropout: Use a dropout analysis for common red noise models.
         Currently only supports power law option.
+    :param dropout_psr: Which pulsar to use a dropout switch on. The value 'all'
+        will use the method on all pulsars.
     :param k_threshold: Threshold for dropout analysis.
+    :param idx:
+        Index of radio frequency dependence (i.e. DM is 2). Any float will work.
     """
 
     orfs = {'crn': None, 'hd': model_orfs.hd_orf(),
@@ -882,6 +886,16 @@ def common_red_noise_block(psd='powerlaw', prior='log-uniform',
 
     if tnfreq and Tspan is not None:
         components = get_tncoeff(Tspan, components)
+
+    if idx is not None:
+        if tndm:
+            cbasis = gpb.createfourierdesignmatrix_dm_tn(nmodes=components,
+                                                         Tspan=Tspan,idx=idx,
+                                                         modes=modes)
+        else:
+            cbasis = gpb.createfourierdesignmatrix_chromatic(nmodes=components,
+                                                             Tspan=Tspan,idx=idx,
+                                                             modes=modes)
 
     # common red noise parameters
     if psd in ['powerlaw', 'turnover', 'turnover_knee',
@@ -1000,7 +1014,12 @@ def common_red_noise_block(psd='powerlaw', prior='log-uniform',
         # define no selection
         selection = selections.Selection(selections.no_selection)
 
-    if orf is None:
+    if idx is not None:
+        crn = gp_signals.BasisCommonGP(cpl, cbasis, coefficients=coefficients,
+                                       components=components, Tspan=Tspan,
+                                       modes=modes, name=name)
+
+    elif orf is None:
         crn = gp_signals.FourierBasisGP(cpl, coefficients=coefficients,
                                         components=components, Tspan=Tspan,
                                         modes=modes, name=name,

@@ -682,7 +682,7 @@ def model_general(psrs, tm_var=False, tm_linear=False, tmparam_list=None,
                   modes=None, wgts=None, logfreq=False, nmodes_log=10,
                   tnfreq=False, dense_like=False, noisedict=None,
                   white_var=False, white_global=False,
-                  tnequad=False, inc_ecorr=False,
+                  tnequad=False, inc_ecorr=False, common_idx=None,
                   orf='crn', orf_names=None, orf_ifreq=0, leg_lmax=5,
                   log10_A_common=None, gamma_common=None, delta_common=None,
                   common_modes=None, common_logmin=None, common_logmax=None,
@@ -960,7 +960,7 @@ def model_general(psrs, tm_var=False, tm_linear=False, tmparam_list=None,
                                               coefficients=coefficients, pshift=pshift, pseed=None,
                                               logmin=common_logmin, logmax=common_logmax,
                                               dropout=dropout, dropout_psr=dropout_psr,
-                                              k_threshold=k_threshold))
+                                              k_threshold=k_threshold, idx=common_idx, tndm=tndm))
             # orf_ifreq only affects freq_hd model.
             # leg_lmax only affects (zero_diag_)legendre_orf model.
             counter += 1
