@@ -836,7 +836,7 @@ def common_red_noise_block(psd='powerlaw', prior='log-uniform',
         Index of radio frequency dependence (i.e. DM is 2). Any float will work.
     """
 
-    orfs = {'crn': None, 'hd': model_orfs.hd_orf(),
+    orfs = {'crn': None, 'crn_chrom': None, 'hd': model_orfs.hd_orf(),
             'gw_monopole': model_orfs.gw_monopole_orf(),
             'gw_dipole': model_orfs.gw_dipole_orf(),
             'st': model_orfs.st_orf(),
@@ -1015,7 +1015,7 @@ def common_red_noise_block(psd='powerlaw', prior='log-uniform',
                                         pshift=pshift, pseed=pseed)
 
     elif orf in orfs.keys():
-        if orf == 'crn':
+        if orf == 'crn' or orf == 'crn_chrom':
             if idxs[orf] is not None:
                 if tndm:
                     cbasis = gpb.createfourierdesignmatrix_dm_tn(nmodes=components,
@@ -1035,7 +1035,7 @@ def common_red_noise_block(psd='powerlaw', prior='log-uniform',
                                                 pshift=pshift, pseed=pseed)
         else:
             if idxs[orf] is not None:
-               if tndm:
+                if tndm:
                     cbasis = gpb.createfourierdesignmatrix_dm_tn(nmodes=components,
                                                                  Tspan=Tspan,
                                                                  idx=idxs[orf],
