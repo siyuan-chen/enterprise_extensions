@@ -960,7 +960,7 @@ def model_general(psrs, tm_var=False, tm_linear=False, tmparam_list=None,
                                               coefficients=coefficients, pshift=pshift, pseed=None,
                                               logmin=common_logmin, logmax=common_logmax,
                                               dropout=dropout, dropout_psr=dropout_psr,
-                                              k_threshold=k_threshold, idx=common_idx, tndm=tndm))
+                                              k_threshold=k_threshold, idxs=common_idx, tndm=tndm))
             # orf_ifreq only affects freq_hd model.
             # leg_lmax only affects (zero_diag_)legendre_orf model.
             counter += 1

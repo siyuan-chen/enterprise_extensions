@@ -780,7 +780,7 @@ def common_red_noise_block(psd='powerlaw', prior='log-uniform',
                            name='gw', coefficients=False, select=None,
                            modes=None, pshift=False, pseed=None,
                            dropout=False, k_threshold=0.5,
-                           dropout_psr='all', idx=None, tndm=False):
+                           dropout_psr='all', idxs=None, tndm=False):
     """
     Returns common red noise model:
 
@@ -886,16 +886,6 @@ def common_red_noise_block(psd='powerlaw', prior='log-uniform',
 
     if tnfreq and Tspan is not None:
         components = get_tncoeff(Tspan, components)
-
-    if idx is not None:
-        if tndm:
-            cbasis = gpb.createfourierdesignmatrix_dm_tn(nmodes=components,
-                                                         Tspan=Tspan,idx=idx,
-                                                         modes=modes)
-        else:
-            cbasis = gpb.createfourierdesignmatrix_chromatic(nmodes=components,
-                                                             Tspan=Tspan,idx=idx,
-                                                             modes=modes)
 
     # common red noise parameters
     if psd in ['powerlaw', 'turnover', 'turnover_knee',
@@ -1014,29 +1004,55 @@ def common_red_noise_block(psd='powerlaw', prior='log-uniform',
         # define no selection
         selection = selections.Selection(selections.no_selection)
 
-    if idx is not None:
-        crn = gp_signals.BasisCommonGP(cpl, cbasis, coefficients=coefficients,
-                                       components=components, Tspan=Tspan,
-                                       modes=modes, name=name)
+    if idxs is None:
+        idxs = dict.fromkeys(orfs.keys())
 
-    elif orf is None:
+    if orf is None:
         crn = gp_signals.FourierBasisGP(cpl, coefficients=coefficients,
                                         components=components, Tspan=Tspan,
                                         modes=modes, name=name,
                                         selection=selection,
                                         pshift=pshift, pseed=pseed)
+
     elif orf in orfs.keys():
         if orf == 'crn':
-            crn = gp_signals.FourierBasisGP(cpl, coefficients=coefficients,
-                                            components=components, Tspan=Tspan,
-                                            modes=modes, name=name,
-                                            pshift=pshift, pseed=pseed)
+            if idxs[orf] is not None:
+                if tndm:
+                    cbasis = gpb.createfourierdesignmatrix_dm_tn(nmodes=components,
+                                                                 Tspan=Tspan,
+                                                                 idx=idxs[orf],
+                                                                 modes=modes)
+                else:
+                    cbasis = gpb.createfourierdesignmatrix_chromatic(nmodes=components,
+                                                                     Tspan=Tspan,
+                                                                     idx=idxs[orf],
+                                                                     modes=modes)
+                crn = gp_signals.BasisGP(cpl, cbasis, coefficients=coefficients, name=name)
+            else:
+                crn = gp_signals.FourierBasisGP(cpl, coefficients=coefficients,
+                                                components=components, Tspan=Tspan,
+                                                modes=modes, name=name,
+                                                pshift=pshift, pseed=pseed)
         else:
-            crn = gp_signals.FourierBasisCommonGP(cpl, orfs[orf],
-                                                  components=components,
-                                                  Tspan=Tspan,
-                                                  modes=modes, name=name,
-                                                  pshift=pshift, pseed=pseed)
+            if idxs[orf] is not None:
+               if tndm:
+                    cbasis = gpb.createfourierdesignmatrix_dm_tn(nmodes=components,
+                                                                 Tspan=Tspan,
+                                                                 idx=idxs[orf],
+                                                                 modes=modes)
+                else:
+                    cbasis = gpb.createfourierdesignmatrix_chromatic(nmodes=components,
+                                                                     Tspan=Tspan,
+                                                                     idx=idxs[orf],
+                                                                     modes=modes)
+                crn = gp_signals.BasisCommonGP(cpl, cbasis, orfs[orf],
+                                               coefficients=coefficients, name=name)
+            else:
+                crn = gp_signals.FourierBasisCommonGP(cpl, orfs[orf],
+                                                      components=components,
+                                                      Tspan=Tspan,
+                                                      modes=modes, name=name,
+                                                      pshift=pshift, pseed=pseed)
     elif isinstance(orf, types.FunctionType):
         crn = gp_signals.FourierBasisCommonGP(cpl, orf,
                                               components=components,
