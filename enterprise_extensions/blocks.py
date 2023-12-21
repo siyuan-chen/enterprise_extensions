@@ -142,8 +142,8 @@ def red_noise_block(psd='powerlaw', prior='log-uniform', Tspan=None,
                     name='red_noise', components=30, tnfreq=False,
                     gamma_val=None, delta_val=None, coefficients=False,
                     select=None, modes=None, wgts=None, combine=True,
-                    break_flat=False, break_flat_fq=None,
-                    logmin=None, logmax=None, dropout=False, k_threshold=0.5):
+                    break_flat=False, break_flat_fq=None, logmin=None,
+                    logmax=None, dropout=False, k_threshold=0.5):
     """
     Returns red noise model:
         Red noise modeled as a power-law with 30 sampling frequencies
@@ -228,8 +228,6 @@ def red_noise_block(psd='powerlaw', prior='log-uniform', Tspan=None,
             nfreq = parameter.Uniform(-0.5, 10-0.5)
             pl = gpp.t_process_adapt(log10_A=log10_A, gamma=gamma,
                                      alphas_adapt=alpha_adapt, nfreq=nfreq)
-        elif psd == 'infinitepower':
-            pl = gpp.infinitepower()
 
     if psd == 'spectrum':
         if logmin is not None and logmax is not None:
@@ -645,8 +643,6 @@ def chromatic_noise_block(gp_kernel='nondiag', psd='powerlaw',
                     log10_A = parameter.LinearExp(-18, -10)
                 elif prior == 'log-uniform':
                     log10_A = parameter.Uniform(-18, -10)
-                else:
-                    log10_A = parameter.Uniform(-20, -11)
             if gamma_val is not None:
                 gamma = parameter.Constant(gamma_val)
             else:
@@ -965,6 +961,7 @@ def common_red_noise_block(psd='powerlaw', prior='log-uniform',
 
     if psd == 'spectrum':
         rho_name = '{}_log10_rho'.format(name)
+        # checking if priors specified, otherwise give default values
         if logmin is not None and logmax is not None:
             if prior == 'uniform':
                 log10_rho_gw = parameter.LinearExp(logmin, logmax,
@@ -979,10 +976,6 @@ def common_red_noise_block(psd='powerlaw', prior='log-uniform',
             elif prior == 'log-uniform':
                 log10_rho_gw = parameter.Uniform(-10, -4,
                                                  size=components)(rho_name)
-            else:
-                log10_rho_gw = parameter.Uniform(-9, -4,
-                                                 size=components)(rho_name)
-
         cpl = gpp.free_spectrum(log10_rho=log10_rho_gw)
 
     if select == 'backend':

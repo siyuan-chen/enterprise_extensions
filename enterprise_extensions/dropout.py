@@ -23,6 +23,7 @@ def dropout_powerlaw(f, name, log10_A=-16, gamma=5,
     """
 
     df = np.diff(np.concatenate((np.array([0]), f[::2])))
+
     if dropout_psr == 'all':
         if k_drop >= k_threshold:
             k_switch = 1.0
