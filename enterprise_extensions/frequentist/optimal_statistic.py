@@ -49,6 +49,11 @@ class OptimalStatistic(object):
                                        is_wideband=wideband,
                                        select='backend', noisedict=noisedict)
         else:
+            if np.any(['marginalizing_linear_timing' in sig for sig in pta.signals]):
+                msg = "Can't run optimal statistic with `enterprise.gp_signals.MarginalizingTimingModel`."
+                msg += " Try creating PTA with `enterprise.gp_signals.TimingModel`, or if using `enterprise_extensions`"
+                msg += " set `tm_marg=False`."
+                raise ValueError(msg)
             self.pta = pta
 
         self.gamma_common = gamma_common
@@ -144,7 +149,6 @@ class OptimalStatistic(object):
 
                 if psd == 'powerlaw':
                     if self.gamma_common is None and 'gw_gamma' in params.keys():
-                        print('{0:1.2}'.format(params['gw_gamma']))
                         phiIJ = utils.powerlaw(self.freqs, log10_A=0,
                                                gamma=params['gw_gamma'])
                     else:

@@ -43,7 +43,8 @@ def get_tncoeff(tspan, components):
 
 def white_noise_block(vary=False, inc_ecorr=False, gp_ecorr=False,
                       efac1=False, tnequad=False, select='backend',
-                      ecorr_select='nanograv', name=None):
+                      ecorr_select='nanograv', name=None,
+                      ng_twg_setup=False, wb_efac_sigma=0.25):
     """
     Returns the white noise block of the model:
 
@@ -95,6 +96,8 @@ def white_noise_block(vary=False, inc_ecorr=False, gp_ecorr=False,
     if vary:
         if efac1:
             efac = parameter.Normal(1.0, 0.1)
+        elif ng_twg_setup:
+            efac = parameter.Normal(1.0, wb_efac_sigma)
         else:
             efac = parameter.Uniform(0.1, 5.0)
         equad = parameter.Uniform(-9, -5)
@@ -170,7 +173,7 @@ def red_noise_block(psd='powerlaw', prior='log-uniform', Tspan=None,
         components = get_tncoeff(Tspan, components)
     # red noise parameters that are common
     if psd in ['powerlaw', 'powerlaw_genmodes', 'turnover', 'broken_powerlaw',
-               'flat_powerlaw', 'tprocess', 'tprocess_adapt', 'infinitepower']:
+               'flat_powerlaw', 'tprocess', 'tprocess_adapt']:
         # parameters shared by PSD functions
         if logmin is not None and logmax is not None:
             if prior == 'uniform':
@@ -228,8 +231,6 @@ def red_noise_block(psd='powerlaw', prior='log-uniform', Tspan=None,
             nfreq = parameter.Uniform(-0.5, 10-0.5)
             pl = gpp.t_process_adapt(log10_A=log10_A, gamma=gamma,
                                      alphas_adapt=alpha_adapt, nfreq=nfreq)
-        elif psd == 'infinitepower':
-            pl = gpp.infinitepower()
 
     if psd == 'spectrum':
         if logmin is not None and logmax is not None:
@@ -1008,7 +1009,7 @@ def common_red_noise_block(psd='powerlaw', prior='log-uniform',
         idxs = dict.fromkeys(orfs.keys())
 
     if orf is None:
-        crn = gp_signals.FourierBasisGP(cpl, coefficients=coefficients,
+        crn = gp_signals.FourierBasisGP(cpl, coefficients=coefficients, combine=combine,
                                         components=components, Tspan=Tspan,
                                         modes=modes, name=name,
                                         selection=selection,
@@ -1055,7 +1056,7 @@ def common_red_noise_block(psd='powerlaw', prior='log-uniform',
                                                       pshift=pshift, pseed=pseed)
     elif isinstance(orf, types.FunctionType):
         crn = gp_signals.FourierBasisCommonGP(cpl, orf,
-                                              components=components,
+                                              components=components, combine=combine,
                                               Tspan=Tspan,
                                               modes=modes, name=name,
                                               pshift=pshift, pseed=pseed)
