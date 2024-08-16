@@ -4,12 +4,9 @@ import types
 
 import numpy as np
 from enterprise import constants as const
-from enterprise.signals import deterministic_signals
 from enterprise.signals import gp_bases as gpb
 from enterprise.signals import gp_priors as gpp
 from enterprise.signals import gp_signals, parameter, selections, utils, white_signals
-
-from enterprise_extensions import deterministic as ee_deterministic
 
 from . import chromatic as chrom
 from . import dropout as drop
@@ -21,8 +18,6 @@ from . import model_utils
 __all__ = [
     "white_noise_block",
     "red_noise_block",
-    "bwm_block",
-    "bwm_sglpsr_block",
     "dm_noise_block",
     "chromatic_noise_block",
     "common_red_noise_block",
@@ -461,93 +456,6 @@ def red_noise_block(
         )
 
     return rn
-
-
-def bwm_block(
-    Tmin, Tmax, amp_prior="log-uniform", skyloc=None, logmin=-18, logmax=-11, name="bwm"
-):
-    """
-    Returns deterministic GW burst with memory model:
-        1. Burst event parameterized by time, sky location,
-        polarization angle, and amplitude
-
-    :param Tmin:
-        Min time to search, probably first TOA (MJD).
-    :param Tmax:
-        Max time to search, probably last TOA (MJD).
-    :param amp_prior:
-        Prior on log10_A. Default if "log-uniform". Use "uniform" for
-        upper limits.
-    :param skyloc:
-        Fixed sky location of BWM signal search as [cos(theta), phi].
-        Search over sky location if ``None`` given.
-    :param logmin:
-        log of minimum BWM amplitude for prior (log10)
-    :param logmax:
-        log of maximum BWM amplitude for prior (log10)
-    :param name:
-        Name of BWM signal.
-    """
-
-    # BWM parameters
-    amp_name = "{}_log10_A".format(name)
-    if amp_prior == "uniform":
-        log10_A_bwm = parameter.LinearExp(logmin, logmax)(amp_name)
-    elif amp_prior == "log-uniform":
-        log10_A_bwm = parameter.Uniform(logmin, logmax)(amp_name)
-
-    pol_name = "{}_pol".format(name)
-    pol = parameter.Uniform(0, np.pi)(pol_name)
-
-    t0_name = "{}_t0".format(name)
-    t0 = parameter.Uniform(Tmin, Tmax)(t0_name)
-
-    costh_name = "{}_costheta".format(name)
-    phi_name = "{}_phi".format(name)
-    if skyloc is None:
-        costh = parameter.Uniform(-1, 1)(costh_name)
-        phi = parameter.Uniform(0, 2 * np.pi)(phi_name)
-    else:
-        costh = parameter.Constant(skyloc[0])(costh_name)
-        phi = parameter.Constant(skyloc[1])(phi_name)
-
-    # BWM signal
-    bwm_wf = ee_deterministic.bwm_delay(
-        log10_h=log10_A_bwm, t0=t0, cos_gwtheta=costh, gwphi=phi, gwpol=pol
-    )
-    bwm = deterministic_signals.Deterministic(bwm_wf, name=name)
-
-    return bwm
-
-
-def bwm_sglpsr_block(
-    Tmin,
-    Tmax,
-    amp_prior="log-uniform",
-    logmin=-17,
-    logmax=-12,
-    name="ramp",
-    fixed_sign=None,
-):
-
-    if fixed_sign is None:
-        sign = parameter.Uniform(-1, 1)("sign")
-    else:
-        sign = np.sign(fixed_sign)
-
-    amp_name = "{}_log10_A".format(name)
-    if amp_prior == "uniform":
-        log10_A_ramp = parameter.LinearExp(logmin, logmax)(amp_name)
-    elif amp_prior == "log-uniform":
-        log10_A_ramp = parameter.Uniform(logmin, logmax)(amp_name)
-
-    t0_name = "{}_t0".format(name)
-    t0 = parameter.Uniform(Tmin, Tmax)(t0_name)
-
-    ramp_wf = ee_deterministic.bwm_sglpsr_delay(log10_A=log10_A_ramp, t0=t0, sign=sign)
-    ramp = deterministic_signals.Deterministic(ramp_wf, name=name)
-
-    return ramp
 
 
 def dm_noise_block(
